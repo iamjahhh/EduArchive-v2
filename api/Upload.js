@@ -5,7 +5,7 @@ const { google } = require('googleapis');
 const { v4: uuidv4 } = require('uuid');
 const stream = require('stream');
 const multer = require('multer');
-const sharp = require('sharp');
+const axios = require('axios');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -52,35 +52,23 @@ async function compressPDF(buffer) {
 }
 
 async function generateThumbnail(pdfBuffer) {
+    const formData = new FormData();
+    formData.append('file', pdfBuffer, 'file.pdf');
+    formData.append('pages', '0'); // Only first page for thumbnail
+    formData.append('imageType', 'png'); // Choose image format
+
     try {
-        const pdfDoc = await PDFDocument.load(pdfBuffer);
-        const page = pdfDoc.getPages()[0];
-        const { width, height } = page.getSize();
-
-        // Create a new PDF with just the first page
-        const thumbnailPdf = await PDFDocument.create();
-        const [copiedPage] = await thumbnailPdf.copyPages(pdfDoc, [0]);
-        thumbnailPdf.addPage(copiedPage);
-
-        // Convert to PNG with high DPI
-        const pngBytes = await thumbnailPdf.saveAsBase64({
-            imageFormat: 'png',
-            resolution: 300
+        const response = await axios.post('https://api.pdf.co/v1/pdf/convert/to/image', formData, {
+            headers: {
+                'x-api-key': process.env.PDFCO_API_KEY,
+                ...formData.getHeaders()
+            }
         });
 
-        // Process with sharp for final thumbnail
-        const pngBuffer = Buffer.from(pngBytes, 'base64');
-        const thumbnail = await sharp(pngBuffer)
-            .resize(200, 280, {
-                fit: 'contain',
-                background: { r: 255, g: 255, b: 255, alpha: 1 }
-            })
-            .png({ quality: 90 })
-            .toBuffer();
-
-        return thumbnail;
+        const thumbnailBuffer = Buffer.from(response.data.body, 'base64');
+        return thumbnailBuffer;
     } catch (error) {
-        console.error('Thumbnail generation error:', error);
+        console.error('PDF.co error:', error);
         return null;
     }
 }
