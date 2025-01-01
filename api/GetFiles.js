@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const { dbFilesConf } = require('../config/Database');
+const { google } = require('googleapis');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -7,6 +8,23 @@ const pool = new Pool({
         rejectUnauthorized: false
     }
 });
+
+const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+);
+oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+
+const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+async function getDriveFileUrl(fileId) {
+    const response = await drive.files.get({
+        fileId,
+        fields: 'webViewLink'
+    });
+    return response.data.webViewLink;
+}
 
 module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
@@ -26,17 +44,17 @@ module.exports = async (req, res) => {
                 summary,
                 upload_date,
                 downloads,
-                encode(thumbnail, 'base64') as thumbnail
+                file_id,
+                thumbnail_id
             FROM archive 
             ORDER BY upload_date DESC`
         );
 
-        const files = result.rows.map(file => ({
+        const files = await Promise.all(result.rows.map(async file => ({
             ...file,
-            thumbnail: file.thumbnail 
-                ? `data:image/png;base64,${file.thumbnail}`
-                : null
-        }));
+            fileUrl: await getDriveFileUrl(file.file_id),
+            thumbnailUrl: await getDriveFileUrl(file.thumbnail_id)
+        })));
 
         return res.status(200).json({
             success: true,

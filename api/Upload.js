@@ -2,7 +2,9 @@ const { Pool } = require('pg');
 const { dbFilesConf } = require('../config/Database');
 const { PDFDocument } = require('pdf-lib');
 const multer = require('multer');
+const { google } = require('googleapis');
 const sharp = require('sharp');
+const { v4: uuidv4 } = require('uuid');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -10,6 +12,15 @@ const pool = new Pool({
         rejectUnauthorized: false
     }
 });
+
+const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+);
+oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+
+const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -64,6 +75,23 @@ async function generateThumbnail(pdfBuffer) {
     }
 }
 
+async function uploadToDrive(buffer, name, mimeType) {
+    const fileMetadata = {
+        name,
+        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
+    };
+    const media = {
+        mimeType,
+        body: buffer
+    };
+    const response = await drive.files.create({
+        resource: fileMetadata,
+        media,
+        fields: 'id'
+    });
+    return response.data.id;
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
 
@@ -88,14 +116,17 @@ module.exports = async (req, res) => {
         const compressedPdfBuffer = await compressPDF(req.file.buffer);
         const thumbnailBuffer = await generateThumbnail(req.file.buffer);
 
+        const fileId = await uploadToDrive(compressedPdfBuffer, `${uuidv4()}.pdf`, 'application/pdf');
+        const thumbnailId = await uploadToDrive(thumbnailBuffer, `${uuidv4()}_thumbnail.png`, 'image/png');
+
         client = await pool.connect();
 
         const result = await client.query(
             `INSERT INTO archive 
-            (title, author, year, topic, keywords, summary, file_data, thumbnail) 
+            (title, author, year, topic, keywords, summary, file_id, thumbnail_id) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
             RETURNING id`,
-            [title, author, year, topic, keywords, summary, compressedPdfBuffer, thumbnailBuffer]
+            [title, author, year, topic, keywords, summary, fileId, thumbnailId]
         );
 
         return res.status(200).json({

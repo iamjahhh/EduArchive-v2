@@ -10,8 +10,8 @@ CREATE TABLE archive (
     topic VARCHAR(50) NOT NULL,
     keywords TEXT NOT NULL,
     summary TEXT NOT NULL,
-    file_data BYTEA NOT NULL,
-    thumbnail BYTEA,
+    file_id VARCHAR(255) NOT NULL,
+    thumbnail_id VARCHAR(255) NOT NULL,
     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     downloads INT DEFAULT 0
 );

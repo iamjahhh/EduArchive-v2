@@ -67,7 +67,7 @@ const Admin = () => {
             formData.append('keywords', document.getElementById('uploadKeywords').value);
             formData.append('summary', document.getElementById('uploadSummary').value);
 
-            const response = await fetch('/api/UploadFile', {
+            const response = await fetch('/api/Upload', {
                 method: 'POST',
                 body: formData,
             });
@@ -113,9 +113,9 @@ const Admin = () => {
                 <div className="files-list">
                     {files.map(file => (
                         <div key={file.id} className="file-item">
-                            {file.thumbnail && (
+                            {file.thumbnailUrl && (
                                 <img 
-                                    src={file.thumbnail} 
+                                    src={file.thumbnailUrl} 
                                     alt={file.title} 
                                     className="thumbnail"
                                 />
@@ -128,6 +128,7 @@ const Admin = () => {
                                 <p>Keywords: {file.keywords}</p>
                                 <p>Downloads: {file.downloads}</p>
                                 <small>Uploaded: {new Date(file.upload_date).toLocaleDateString()}</small>
+                                <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">View PDF</a>
                             </div>
                         </div>
                     ))}
