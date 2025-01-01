@@ -4,7 +4,7 @@ const stream = require('stream');
 const multer = require('multer');
 const { dbFilesConf } = require('../config/Database');
 const { google } = require('googleapis');
-const { fromBuffer } = require('pdf2pic');
+const { convert } = require('pdf-to-png-converter');
 const { v4: uuidv4 } = require('uuid');
 
 const pool = new Pool({
@@ -53,19 +53,15 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfBuffer) {
     try {
-        const options = {
-            density: 100,
-            saveFilename: "thumbnail",
-            format: "png",
+        const pngPages = await convert(pdfBuffer, {
+            disableFontFace: true,
+            useSystemFonts: false,
             width: 200,
-            height: 280
-        };
+            height: 280,
+            pagesToProcess: [1]
+        });
         
-        const convert = fromBuffer(pdfBuffer, options);
-        const pageToConvert = 1;
-        
-        const result = await convert(pageToConvert);
-        return result.buffer;
+        return pngPages[0].content;
     } catch (error) {
         console.error('Thumbnail generation error:', error);
         return null;
@@ -102,6 +98,15 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             requestBody: fileMetadata,
             media: media,
             fields: 'id'
+        });
+
+        // Set file permissions to "Anyone with the link can view"
+        await drive.permissions.create({
+            fileId: file.data.id,
+            requestBody: {
+                role: 'reader',
+                type: 'anyone'
+            }
         });
 
         console.log(`${isFile ? 'File' : 'Thumbnail'} uploaded successfully:`, file.data.id);
