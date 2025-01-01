@@ -1,0 +1,17 @@
+{
+    "version": 2,
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/backend/api/$1"
+        },
+        {
+            "src": "/static/(.*)",
+            "dest": "/frontend/public/static/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/frontend/public/index.html"
+        }
+    ]
+}
