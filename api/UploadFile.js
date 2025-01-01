@@ -33,13 +33,11 @@ async function generateThumbnail(pdfBuffer) {
         const pdfDoc = await PDFDocument.load(pdfBuffer);
         const firstPage = pdfDoc.getPages()[0];
         
-        // Convert PDF page to PNG
         const pngBytes = await firstPage.render({
             width: 200,
             height: 280
         }).toBuffer();
 
-        // Optimize the PNG using sharp
         const thumbnail = await sharp(pngBytes)
             .resize(200, 280, {
                 fit: 'contain',
