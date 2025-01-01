@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const { dbFilesConf } = require('../config/database');
+const { dbFilesConf } = require('../config/Database');
 const multer = require('multer');
 const { PDFDocument } = require('pdf-lib');
 

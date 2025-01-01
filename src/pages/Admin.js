@@ -53,6 +53,7 @@ const Admin = () => {
             });
 
             if (!response.ok) {
+                console.log(response);
                 alert('Response !ok: ' + JSON.stringify(response));
             }
 
