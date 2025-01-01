@@ -21,15 +21,23 @@ oauth2Client.setCredentials({
 
 const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-async function getDriveFileUrl(fileId) {
+async function getDriveFileUrl(fileId, isThumbnail = false) {
     try {
-        const file = await drive.files.get({
+        const response = await drive.files.get({
             fileId: fileId,
-            fields: 'webContentLink,webViewLink'
+            fields: 'webContentLink,webViewLink',
+            supportsAllDrives: true
         });
+
+        // For thumbnails use direct link, for PDFs use preview link
+        let url = isThumbnail ? response.data.webContentLink : response.data.webViewLink;
         
-        // For thumbnails, use webContentLink; for PDFs, use webViewLink
-        return file.data.webContentLink || file.data.webViewLink;
+        // Remove confirmation prompt from thumbnail URLs
+        if (isThumbnail && url) {
+            url = url.replace('&export=download', '');
+        }
+
+        return url;
     } catch (error) {
         console.error(`Error getting file ${fileId}:`, error);
         return null;
@@ -62,8 +70,8 @@ module.exports = async (req, res) => {
 
         const files = await Promise.all(result.rows.map(async file => ({
             ...file,
-            fileUrl: await getDriveFileUrl(file.file_id),
-            thumbnailUrl: await getDriveFileUrl(file.thumbnail_id)
+            fileUrl: await getDriveFileUrl(file.file_id, false),
+            thumbnailUrl: await getDriveFileUrl(file.thumbnail_id, true)
         })));
 
         return res.status(200).json({

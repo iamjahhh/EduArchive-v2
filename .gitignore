@@ -17,9 +17,6 @@
 .env.production.local
 .env.*.local
 
-# Config files with sensitive data
-/config/Database.js
-
 # Environment files
 .env
 .env.*

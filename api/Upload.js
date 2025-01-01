@@ -6,8 +6,9 @@ const { dbFilesConf } = require('../config/Database');
 const { google } = require('googleapis');
 const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
-const pdf2img = require('pdf2img-promises');
 const fs = require('fs').promises;
+const path = require('path');
+const os = require('os');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -55,31 +56,41 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfBuffer) {
     try {
-        // Save PDF buffer to temporary file
-        const tempPdfPath = `/tmp/${uuidv4()}.pdf`;
-        await fs.writeFile(tempPdfPath, pdfBuffer);
+        const pdfDoc = await PDFDocument.load(pdfBuffer);
+        const page = pdfDoc.getPages()[0];
         
-        // Convert first page to PNG
-        const result = await pdf2img.convert(tempPdfPath, {
-            width: 200,
-            height: 280,
-            page_numbers: [1],
-            output_type: 'png'
+        // Create a new PDF with just the first page
+        const thumbnailPdf = await PDFDocument.create();
+        const [copiedPage] = await thumbnailPdf.copyPages(pdfDoc, [0]);
+        thumbnailPdf.addPage(copiedPage);
+
+        // Set white background
+        const { width, height } = page.getSize();
+        copiedPage.drawRectangle({
+            x: 0,
+            y: 0,
+            width: width,
+            height: height,
+            color: { r: 1, g: 1, b: 1 },
         });
-        
-        // Optimize the thumbnail
-        const optimizedThumbnail = await sharp(result[0])
+
+        // Convert to PNG with high DPI
+        const pngBytes = await thumbnailPdf.saveAsBase64({
+            imageFormat: 'png',
+            resolution: 300
+        });
+
+        // Process with sharp for final thumbnail
+        const pngBuffer = Buffer.from(pngBytes, 'base64');
+        const thumbnail = await sharp(pngBuffer)
             .resize(200, 280, {
                 fit: 'contain',
                 background: { r: 255, g: 255, b: 255, alpha: 1 }
             })
-            .png({ quality: 80 })
+            .png({ quality: 90 })
             .toBuffer();
-            
-        // Cleanup
-        await fs.unlink(tempPdfPath);
-        
-        return optimizedThumbnail;
+
+        return thumbnail;
     } catch (error) {
         console.error('Thumbnail generation error:', error);
         return null;
@@ -95,13 +106,6 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             ? process.env.GOOGLE_DRIVE_FILES_FOLDER_ID 
             : process.env.GOOGLE_DRIVE_THUMBNAILS_FOLDER_ID;
 
-        console.log('Starting upload to Drive:', {
-            name,
-            mimeType,
-            folderId,
-            type: isFile ? 'file' : 'thumbnail'
-        });
-
         const fileMetadata = {
             name,
             parents: [folderId]
@@ -112,13 +116,14 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             body: bufferStream
         };
 
+        // Create file
         const file = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
-            fields: 'id'
+            fields: 'id, webContentLink'
         });
 
-        // Set file permissions to "Anyone with the link can view"
+        // Set public permissions
         await drive.permissions.create({
             fileId: file.data.id,
             requestBody: {
@@ -127,7 +132,15 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             }
         });
 
-        console.log(`${isFile ? 'File' : 'Thumbnail'} uploaded successfully:`, file.data.id);
+        // Update sharing settings to make the file accessible
+        await drive.files.update({
+            fileId: file.data.id,
+            requestBody: {
+                copyRequiresWriterPermission: false,
+                writersCanShare: true
+            }
+        });
+
         return file.data.id;
     } catch (error) {
         console.error('Drive upload error:', error);

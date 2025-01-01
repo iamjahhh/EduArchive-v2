@@ -80,7 +80,6 @@ const Admin = () => {
 
             await fetchFiles();
 
-            // Close modal properly
             const modalElement = document.getElementById('uploadModal');
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
             if (modalInstance) {
