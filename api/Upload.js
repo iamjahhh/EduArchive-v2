@@ -5,6 +5,7 @@ const multer = require('multer');
 const { google } = require('googleapis');
 const sharp = require('sharp');
 const { v4: uuidv4 } = require('uuid');
+const stream = require('stream');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -76,13 +77,16 @@ async function generateThumbnail(pdfBuffer) {
 }
 
 async function uploadToDrive(buffer, name, mimeType) {
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(buffer);
+
     const fileMetadata = {
         name,
         parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
     };
     const media = {
         mimeType,
-        body: buffer
+        body: bufferStream
     };
     const response = await drive.files.create({
         resource: fileMetadata,
