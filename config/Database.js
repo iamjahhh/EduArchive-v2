@@ -7,9 +7,11 @@ const dbAccountsConf = {
 };
 
 const dbFilesConf = {
-    host: "sql.freedb.tech",
-    user: "freedb_iam_jah1",
-    password: "x3N5??Z3Tz263xk",
-    database: "freedb_eduarchive_server",
-    port: 3306
+    host: "aws-0-ap-southeast-1.pooler.supabase.com",
+    user: "postgres.mqtfasojsdfhkiggvpvu",
+    password: "Putangina02!",
+    database: "postgres",
+    port: 5432
 };
+
+module.exports = { dbFilesConf };

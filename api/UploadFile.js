@@ -1,8 +1,9 @@
-const mysql = require('mysql2/promise');
-const { dbFilesConf } = require('../config/Database');
-
+const { Pool } = require('pg');
+const { dbFilesConf } = require('../config/database');
 const multer = require('multer');
 const { PDFDocument } = require('pdf-lib');
+
+const pool = new Pool(dbFilesConf);
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -48,10 +49,11 @@ module.exports = async (req, res) => {
         }
 
         const compressedPdfBuffer = await compressPDF(req.file.buffer);
-        const connection = await mysql.createConnection(dbFilesConf);
 
-        const [result] = await connection.execute(
-            'INSERT INTO archive (title, author, year, topic, keywords, summary, file_data) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        const client = await pool.connect();
+
+        const result = await client.query(
+            'INSERT INTO archive (title, author, year, topic, keywords, summary, file_data) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
             [
                 req.body.title,
                 req.body.author,
@@ -63,11 +65,11 @@ module.exports = async (req, res) => {
             ]
         );
 
-        await connection.end();
+        client.release();
 
         res.status(200).json({
             message: 'File uploaded successfully',
-            fileId: result.insertId
+            fileId: result.rows[0].id
         });
 
     } catch (error) {
