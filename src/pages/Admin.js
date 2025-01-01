@@ -53,7 +53,7 @@ const Admin = () => {
             });
 
             if (!response.ok) {
-                alert('Response !ok: ' + response.message);
+                alert('Response !ok: ' + JSON.stringify(response));
             }
 
             const modalElement = document.getElementById('uploadModal');
