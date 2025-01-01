@@ -1,8 +1,9 @@
 const { Pool } = require('pg');
 const { dbFilesConf } = require('../config/Database');
-const { PDFDocument } = require('pdf-lib');
+const { PDFDocument, rgb } = require('pdf-lib');
 const multer = require('multer');
 const sharp = require('sharp');
+const { degrees } = require('pdf-lib');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -33,22 +34,48 @@ async function generateThumbnail(pdfBuffer) {
         const pdfDoc = await PDFDocument.load(pdfBuffer);
         const firstPage = pdfDoc.getPages()[0];
         
-        const pngBytes = await firstPage.render({
-            width: 200,
-            height: 280
-        }).toBuffer();
+        // Get page dimensions
+        const { width, height } = firstPage.getSize();
+        
+        // Create a new PDF with white background for the thumbnail
+        const thumbnailPdf = await PDFDocument.create();
+        const thumbnailPage = thumbnailPdf.addPage([width, height]);
+        
+        // Draw white background
+        thumbnailPage.drawRectangle({
+            x: 0,
+            y: 0,
+            width: width,
+            height: height,
+            color: rgb(1, 1, 1), // white
+        });
+        
+        // Copy the first page content
+        const [copiedPage] = await thumbnailPdf.copyPages(pdfDoc, [0]);
+        thumbnailPdf.addPage(copiedPage);
 
-        const thumbnail = await sharp(pngBytes)
+        // Save as PNG with higher resolution
+        const pngBytes = await thumbnailPdf.saveAsBase64({
+            resolution: 150,
+            pageIndex: 0
+        });
+
+        // Convert base64 to buffer and process with sharp
+        const pngBuffer = Buffer.from(pngBytes, 'base64');
+        
+        // Process with sharp
+        const thumbnail = await sharp(pngBuffer)
             .resize(200, 280, {
                 fit: 'contain',
-                background: { r: 255, g: 255, b: 255 }
+                background: { r: 255, g: 255, b: 255, alpha: 1 }
             })
-            .png({ quality: 80 })
+            .png()
             .toBuffer();
 
         return thumbnail;
     } catch (error) {
         console.error('Thumbnail generation error:', error);
+        // Return a default thumbnail or null
         return null;
     }
 }

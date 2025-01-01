@@ -31,12 +31,15 @@ module.exports = async (req, res) => {
             ORDER BY upload_date DESC`
         );
 
-        // Convert thumbnail to base64 URL
+        // Convert thumbnail to base64 URL with error handling
         const files = result.rows.map(file => ({
             ...file,
-            thumbnail: file.thumbnail ? 
-                `data:image/png;base64,${file.thumbnail}` : null
+            thumbnail: file.thumbnail 
+                ? `data:image/png;base64,${file.thumbnail}`
+                : '/default-thumbnail.png' // You can add a default thumbnail image
         }));
+
+        console.log('Thumbnails processed:', files.map(f => !!f.thumbnail)); // Debug log
 
         return res.status(200).json({
             success: true,
