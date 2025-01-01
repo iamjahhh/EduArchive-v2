@@ -37,6 +37,8 @@ async function compressPDF(buffer) {
 }
 
 module.exports = async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
@@ -77,7 +79,7 @@ module.exports = async (req, res) => {
 
         console.log('Insert successful, ID:', result.rows[0].id);
 
-        res.status(200).json({
+        return res.status(200).json({
             message: 'File uploaded successfully',
             fileId: result.rows[0].id
         });
@@ -89,10 +91,9 @@ module.exports = async (req, res) => {
             code: error.code
         });
 
-        res.status(500).json({
+        return res.status(500).json({
             message: 'Error uploading file',
-            error: error.message,
-            details: error.stack
+            error: error.message
         });
 
     } finally {

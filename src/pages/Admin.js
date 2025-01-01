@@ -52,10 +52,16 @@ const Admin = () => {
                 body: formData,
             });
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                console.error('Response parse error:', parseError);
+                throw new Error('Server response was not in JSON format');
+            }
 
             if (!response.ok) {
-                throw new Error(data.message || data.error || 'Upload failed');
+                throw new Error(data?.message || data?.error || 'Upload failed');
             }
 
             const modalElement = document.getElementById('uploadModal');
