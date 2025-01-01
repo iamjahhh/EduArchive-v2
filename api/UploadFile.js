@@ -3,7 +3,12 @@ const { dbFilesConf } = require('../config/Database');
 const multer = require('multer');
 const { PDFDocument } = require('pdf-lib');
 
-const pool = new Pool(dbFilesConf);
+const pool = new Pool({
+    ...dbFilesConf,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -36,11 +41,14 @@ module.exports = async (req, res) => {
         return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
+    let client;
     try {
         await new Promise((resolve, reject) => {
             upload(req, res, (err) => {
-                if (err) reject(err);
-                else resolve();
+                if (err) {
+                    console.error('Multer error:', err);
+                    reject(err);
+                } else resolve();
             });
         });
 
@@ -48,9 +56,11 @@ module.exports = async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        const compressedPdfBuffer = await compressPDF(req.file.buffer);
+        console.log('File received:', req.file.originalname);
+        console.log('Form data:', req.body);
 
-        const client = await pool.connect();
+        const compressedPdfBuffer = await compressPDF(req.file.buffer);
+        client = await pool.connect();
 
         const result = await client.query(
             'INSERT INTO archive (title, author, year, topic, keywords, summary, file_data) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
@@ -65,7 +75,7 @@ module.exports = async (req, res) => {
             ]
         );
 
-        client.release();
+        console.log('Insert successful, ID:', result.rows[0].id);
 
         res.status(200).json({
             message: 'File uploaded successfully',
@@ -73,10 +83,21 @@ module.exports = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Upload error:', error);
+        console.error('Detailed error:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code
+        });
+
         res.status(500).json({
             message: 'Error uploading file',
-            error: error.message
+            error: error.message,
+            details: error.stack
         });
+
+    } finally {
+        if (client) {
+            client.release();
+        }
     }
 };

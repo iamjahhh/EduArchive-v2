@@ -52,9 +52,10 @@ const Admin = () => {
                 body: formData,
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                console.log(response);
-                alert('Response !ok: ' + JSON.stringify(response));
+                throw new Error(data.message || data.error || 'Upload failed');
             }
 
             const modalElement = document.getElementById('uploadModal');
@@ -65,7 +66,7 @@ const Admin = () => {
 
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Error uploading file: ' + error.message);
+            alert(`Error uploading file: ${error.message}`);
         } finally {
             setIsUploading(false);
         }
