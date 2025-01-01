@@ -1,11 +1,16 @@
 const { Pool } = require('pg');
-const { dbFilesConf } = require('../config/Database');
 const { PDFDocument } = require('pdf-lib');
-const multer = require('multer');
-const { google } = require('googleapis');
-const sharp = require('sharp');
-const { v4: uuidv4 } = require('uuid');
+
 const stream = require('stream');
+const multer = require('multer');
+
+const { dbFilesConf } = require('../config/Database');
+const { google } = require('googleapis');
+
+const { fromBuffer } = require('pdf2pic');
+const { v4: uuidv4 } = require('uuid');
+
+require('dotenv').config();
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -17,11 +22,17 @@ const pool = new Pool({
 const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
+    'https://developers.google.com/oauthplayground'
 );
-oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
 
-const drive = google.drive({ version: 'v3', auth: oauth2Client });
+oauth2Client.setCredentials({
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+});
+
+const drive = google.drive({
+    version: 'v3',
+    auth: oauth2Client
+});
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -47,53 +58,63 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfBuffer) {
     try {
-        const pdfDoc = await PDFDocument.load(pdfBuffer);
-        const firstPage = pdfDoc.getPages()[0];
-        const { width, height } = firstPage.getSize();
-
-        const thumbnailPdf = await PDFDocument.create();
-        const [copiedPage] = await thumbnailPdf.copyPages(pdfDoc, [0]);
-        thumbnailPdf.addPage(copiedPage);
-
-        const thumbnailBytes = await thumbnailPdf.saveAsBase64({
-            resolution: 72,
-            imageFormat: 'png'
-        });
-
-        const thumbnailBuffer = Buffer.from(thumbnailBytes, 'base64');
-        const optimizedThumbnail = await sharp(thumbnailBuffer)
-            .resize(200, 280, {
-                fit: 'contain',
-                background: { r: 255, g: 255, b: 255, alpha: 1 }
-            })
-            .png({ quality: 80 })
-            .toBuffer();
-
-        return optimizedThumbnail;
+        const options = {
+            density: 100,
+            saveFilename: "thumbnail",
+            format: "png",
+            width: 200,
+            height: 280
+        };
+        
+        const convert = fromBuffer(pdfBuffer, options);
+        const pageToConvert = 1;
+        
+        const result = await convert(pageToConvert);
+        return result.buffer;
     } catch (error) {
         console.error('Thumbnail generation error:', error);
         return null;
     }
 }
 
-async function uploadToDrive(buffer, name, mimeType) {
-    const bufferStream = new stream.PassThrough();
-    bufferStream.end(buffer);
+async function uploadToDrive(buffer, name, mimeType, isFile = true) {
+    try {
+        const bufferStream = new stream.PassThrough();
+        bufferStream.end(buffer);
 
-    const fileMetadata = {
-        name,
-        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID]
-    };
-    const media = {
-        mimeType,
-        body: bufferStream
-    };
-    const response = await drive.files.create({
-        resource: fileMetadata,
-        media,
-        fields: 'id'
-    });
-    return response.data.id;
+        const folderId = isFile 
+            ? process.env.GOOGLE_DRIVE_FILES_FOLDER_ID 
+            : process.env.GOOGLE_DRIVE_THUMBNAILS_FOLDER_ID;
+
+        console.log('Starting upload to Drive:', {
+            name,
+            mimeType,
+            folderId,
+            type: isFile ? 'file' : 'thumbnail'
+        });
+
+        const fileMetadata = {
+            name,
+            parents: [folderId]
+        };
+
+        const media = {
+            mimeType,
+            body: bufferStream
+        };
+
+        const file = await drive.files.create({
+            requestBody: fileMetadata,
+            media: media,
+            fields: 'id'
+        });
+
+        console.log(`${isFile ? 'File' : 'Thumbnail'} uploaded successfully:`, file.data.id);
+        return file.data.id;
+    } catch (error) {
+        console.error('Drive upload error:', error);
+        throw error;
+    }
 }
 
 module.exports = async (req, res) => {
@@ -120,8 +141,8 @@ module.exports = async (req, res) => {
         const compressedPdfBuffer = await compressPDF(req.file.buffer);
         const thumbnailBuffer = await generateThumbnail(req.file.buffer);
 
-        const fileId = await uploadToDrive(compressedPdfBuffer, `${uuidv4()}.pdf`, 'application/pdf');
-        const thumbnailId = await uploadToDrive(thumbnailBuffer, `${uuidv4()}_thumbnail.png`, 'image/png');
+        const fileId = await uploadToDrive(compressedPdfBuffer, `${uuidv4()}.pdf`, 'application/pdf', true);
+        const thumbnailId = await uploadToDrive(thumbnailBuffer, `${uuidv4()}_thumbnail.png`, 'image/png', false);
 
         client = await pool.connect();
 

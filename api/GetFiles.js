@@ -19,11 +19,18 @@ oauth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN })
 const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
 async function getDriveFileUrl(fileId) {
-    const response = await drive.files.get({
-        fileId,
-        fields: 'webViewLink'
-    });
-    return response.data.webViewLink;
+    try {
+        const file = await drive.files.get({
+            fileId: fileId,
+            fields: 'webContentLink,webViewLink'
+        });
+        
+        // For thumbnails, use webContentLink; for PDFs, use webViewLink
+        return file.data.webContentLink || file.data.webViewLink;
+    } catch (error) {
+        console.error(`Error getting file ${fileId}:`, error);
+        return null;
+    }
 }
 
 module.exports = async (req, res) => {
