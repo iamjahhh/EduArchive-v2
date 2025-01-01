@@ -1,14 +1,13 @@
 const { Pool } = require('pg');
 const { PDFDocument } = require('pdf-lib');
-const stream = require('stream');
-const multer = require('multer');
 const { dbFilesConf } = require('../config/Database');
 const { google } = require('googleapis');
 const { v4: uuidv4 } = require('uuid');
+
+const stream = require('stream');
+const multer = require('multer');
+const puppeteer = require('puppeteer');
 const sharp = require('sharp');
-const fs = require('fs').promises;
-const path = require('path');
-const os = require('os');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -56,33 +55,17 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfBuffer) {
     try {
-        const pdfDoc = await PDFDocument.load(pdfBuffer);
-        const page = pdfDoc.getPages()[0];
-        
-        // Create a new PDF with just the first page
-        const thumbnailPdf = await PDFDocument.create();
-        const [copiedPage] = await thumbnailPdf.copyPages(pdfDoc, [0]);
-        thumbnailPdf.addPage(copiedPage);
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
 
-        // Set white background
-        const { width, height } = page.getSize();
-        copiedPage.drawRectangle({
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-            color: { r: 1, g: 1, b: 1 },
+        const dataUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
+        await page.goto(dataUrl, { waitUntil: 'load' });
+
+        const screenshotBuffer = await page.screenshot({
+            clip: { x: 0, y: 0, width: 800, height: 600 } 
         });
 
-        // Convert to PNG with high DPI
-        const pngBytes = await thumbnailPdf.saveAsBase64({
-            imageFormat: 'png',
-            resolution: 300
-        });
-
-        // Process with sharp for final thumbnail
-        const pngBuffer = Buffer.from(pngBytes, 'base64');
-        const thumbnail = await sharp(pngBuffer)
+        const thumbnail = await sharp(screenshotBuffer)
             .resize(200, 280, {
                 fit: 'contain',
                 background: { r: 255, g: 255, b: 255, alpha: 1 }
@@ -90,6 +73,7 @@ async function generateThumbnail(pdfBuffer) {
             .png({ quality: 90 })
             .toBuffer();
 
+        await browser.close();
         return thumbnail;
     } catch (error) {
         console.error('Thumbnail generation error:', error);
