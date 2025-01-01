@@ -80,10 +80,24 @@ const Admin = () => {
 
             await fetchFiles();
 
+            // Close modal properly
             const modalElement = document.getElementById('uploadModal');
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            modal.hide();
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) {
+                modalInstance.hide();
+                // Remove modal backdrop manually
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                // Reset body classes
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }
+            
             resetForm();
+            alert('File uploaded successfully!');
 
         } catch (error) {
             console.error('Upload error:', error);

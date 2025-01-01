@@ -4,8 +4,10 @@ const stream = require('stream');
 const multer = require('multer');
 const { dbFilesConf } = require('../config/Database');
 const { google } = require('googleapis');
-const { convert } = require('pdf-to-png-converter');
 const { v4: uuidv4 } = require('uuid');
+const sharp = require('sharp');
+const pdf2img = require('pdf2img-promises');
+const fs = require('fs').promises;
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -53,15 +55,31 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfBuffer) {
     try {
-        const pngPages = await convert(pdfBuffer, {
-            disableFontFace: true,
-            useSystemFonts: false,
+        // Save PDF buffer to temporary file
+        const tempPdfPath = `/tmp/${uuidv4()}.pdf`;
+        await fs.writeFile(tempPdfPath, pdfBuffer);
+        
+        // Convert first page to PNG
+        const result = await pdf2img.convert(tempPdfPath, {
             width: 200,
             height: 280,
-            pagesToProcess: [1]
+            page_numbers: [1],
+            output_type: 'png'
         });
         
-        return pngPages[0].content;
+        // Optimize the thumbnail
+        const optimizedThumbnail = await sharp(result[0])
+            .resize(200, 280, {
+                fit: 'contain',
+                background: { r: 255, g: 255, b: 255, alpha: 1 }
+            })
+            .png({ quality: 80 })
+            .toBuffer();
+            
+        // Cleanup
+        await fs.unlink(tempPdfPath);
+        
+        return optimizedThumbnail;
     } catch (error) {
         console.error('Thumbnail generation error:', error);
         return null;
