@@ -1,0 +1,329 @@
+.admin-container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 130px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.upload-btn, .green-btn, .red-btn, .cancel-btn {
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.upload-btn {
+    background-color: #00a126;
+    color: white;
+}
+
+.green-btn {
+    background-color: #00a126;
+    color: white;
+}
+
+.red-btn {
+    background-color: #e53935;
+    color: white;
+}
+
+.cancel-btn {
+    background-color: #161616;
+    color: white;
+}
+
+.upload-btn:hover, .green-btn:hover, .red-btn:hover, .cancel-btn:hover {
+    opacity: 0.8;
+}
+
+/* Table styles */
+.files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.files-list .file-item {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.files-list .file-item img {
+    max-width: 70px;
+    max-height: 70px;
+    border-radius: 5px;
+}
+
+.files-list .file-item .file-info {
+    flex: 1;
+}
+
+.files-list .file-item .file-info .title {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.files-list .file-item .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.files-list .file-item .actions button {
+    padding: 5px 10px;
+    align-self: left;
+    font-size: 14px;
+}
+
+.thumbnail {
+    width: 100px;
+    height: 130px;
+    object-fit: contain;
+    border-radius: 5px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    object-fit: cover;
+    align-self: center;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    margin-bottom: 15px; 
+}
+
+label {
+    font-weight: bold;
+}
+
+.radio-group {
+    margin-left: 20px;
+}
+
+.radio-option {
+    font-weight: normal;
+    font-style: italic;
+    margin-bottom: -10px;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    cursor: pointer;
+    color: #333;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    text-align: left;
+}
+
+input[type="text"], input[type="number"], input[type="file"], textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 0px 0;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+}
+
+textarea {
+    height: 100px;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.radio-label input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.radio-label input[type="radio"]:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.radio-label input[type="radio"]:checked::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: white;
+    position: absolute;
+    top: 4px;
+    left: 4px;
+}
+
+.radio-label:hover input[type="radio"] {
+    border-color: #66bb6a;
+}
+
+.radio-label:hover {
+    color: #66bb6a;
+}
+
+.file-input-container {
+    position: relative;
+    display: inline-block;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 100%; 
+}
+
+input[type="file"] {
+    opacity: 0;
+    position: absolute;
+    z-index: -1;
+    width: 0;
+    height: 0;
+}
+
+.custom-file-label {
+    display: inline-block;
+    background-color: #007BFF;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-file-label:hover {
+    background-color: #0056b3;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.custom-file-label:active {
+    background-color: #003f7f;
+}
+
+#file-name {
+    margin-top: 3px;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #555;
+    font-style: italic;
+    text-align: center;
+}
+
+button:disabled {
+    background-color: #ccc; 
+    cursor: not-allowed; 
+    opacity: 0.6; 
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+    display: none; /* Initially hidden */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (min-width: 768px) {
+    .files-list {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for medium-sized screens */
+    }
+
+    .files-list th, .files-list td {
+        font-size: 16px;
+    }
+
+    .keywords .year {
+        display: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    .files-list {
+        grid-template-columns: repeat(3, 1fr); /* 3 columns for large screens */
+    }
+
+    .files-list th, .files-list td {
+        font-size: 16px;
+    }
+
+    .keywords .year {
+        display: none;
+    }
+}
+
+@media (min-width: 1200px) {
+    .files-list {
+        grid-template-columns: repeat(4, 1fr); /* 4 columns for extra-large screens */
+    }
+
+    .files-list th, .files-list td {
+        font-size: 16px;
+    }
+
+    .keywords .year {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .thumbnail {
+        width: 80px;
+        height: 100px;
+    }
+
+    .keywords,
+    .year {
+        display: none;
+    }
+}

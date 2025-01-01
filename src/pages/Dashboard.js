@@ -13,7 +13,7 @@ function Dashboard() {
         <section className="topics">
           <div className="search-container">
             <input type="text" id="topic-search" placeholder="Search topics..." />
-            <button id="search-button" className="search-button">
+            <button type="submit" className="search-button">
               <i className="fas fa-search"></i>
             </button>
           </div>
