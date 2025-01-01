@@ -52,7 +52,9 @@ const Admin = () => {
                 body: formData,
             });
 
-            if (!response.ok) throw new Error('Upload failed');
+            if (!response.ok) {
+                alert('Response !ok: ' + response.message);
+            }
 
             const modalElement = document.getElementById('uploadModal');
             const modal = bootstrap.Modal.getInstance(modalElement);
