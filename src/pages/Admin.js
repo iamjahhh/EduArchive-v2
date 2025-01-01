@@ -7,6 +7,7 @@ const Admin = () => {
     const [fileError, setFileError] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState('');
+    const [files, setFiles] = useState([]);
     
     const resetForm = () => {
         setFileUploaded(null);
@@ -21,6 +22,26 @@ const Admin = () => {
             return () => modal.removeEventListener('hidden.bs.modal', resetForm);
         }
     }, []);
+
+    useEffect(() => {
+        fetchFiles();
+    }, []);
+
+    const fetchFiles = async () => {
+        try {
+            const response = await fetch('/api/GetFiles');
+            const data = await response.json();
+            
+            if (data.success) {
+                setFiles(data.files);
+                console.log(data.files);
+            } else {
+                console.error('Error fetching files:', data.message);
+            }
+        } catch (error) {
+            console.error('Error fetching files:', error);
+        }
+    };
 
     const handleFileChange = (event) => {
         const file = event.target.files[0];
@@ -64,11 +85,12 @@ const Admin = () => {
                 throw new Error(data?.message || data?.error || 'Upload failed');
             }
 
+            await fetchFiles();
+
             const modalElement = document.getElementById('uploadModal');
             const modal = bootstrap.Modal.getInstance(modalElement);
             modal.hide();
             resetForm();
-            alert('File uploaded successfully!');
 
         } catch (error) {
             console.error('Upload error:', error);
@@ -95,7 +117,20 @@ const Admin = () => {
                 ><i className="fas fa-upload"></i> Upload New Resource
                 </button>
 
-                <div id="filesTable" className="files-list">
+                <div className="files-list">
+                    {files.map(file => (
+                        <div key={file.id} className="file-item">
+                            <div className="file-info">
+                                <h3 className="title">{file.title}</h3>
+                                <p>Author: {file.author}</p>
+                                <p>Year: {file.year}</p>
+                                <p>Topic: {file.topic}</p>
+                                <p>Keywords: {file.keywords}</p>
+                                <p>Downloads: {file.downloads}</p>
+                                <small>Uploaded: {new Date(file.upload_date).toLocaleDateString()}</small>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 

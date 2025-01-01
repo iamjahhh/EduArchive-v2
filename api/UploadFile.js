@@ -1,23 +1,18 @@
 const { Pool } = require('pg');
-const multer = require('multer');
+const { dbFilesConf } = require('../config/Database');
 const { PDFDocument } = require('pdf-lib');
+const multer = require('multer');
 
-// Configure PostgreSQL connection
 const pool = new Pool({
-    host: "aws-0-ap-southeast-1.pooler.supabase.com",
-    user: "postgres.mqtfasojsdfhkiggvpvu",
-    password: "Putangina02!",
-    database: "postgres",
-    port: 5432,
+    ...dbFilesConf,
     ssl: {
         rejectUnauthorized: false
     }
 });
 
-// Configure multer for file upload
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype === 'application/pdf') {
             cb(null, true);
@@ -27,13 +22,11 @@ const upload = multer({
     }
 }).single('file');
 
-// Compress PDF function
 async function compressPDF(buffer) {
     const pdfDoc = await PDFDocument.load(buffer);
     return await pdfDoc.save({ compress: true });
 }
 
-// API handler
 module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
 
@@ -43,7 +36,6 @@ module.exports = async (req, res) => {
 
     let client;
     try {
-        // Handle file upload
         await new Promise((resolve, reject) => {
             upload(req, res, (err) => {
                 if (err) reject(err);
@@ -55,16 +47,11 @@ module.exports = async (req, res) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        // Get form data
         const { title, author, year, topic, keywords, summary } = req.body;
-
-        // Compress PDF
         const compressedPdfBuffer = await compressPDF(req.file.buffer);
 
-        // Connect to database
         client = await pool.connect();
 
-        // Insert into database
         const result = await client.query(
             `INSERT INTO archive 
             (title, author, year, topic, keywords, summary, file_data) 
@@ -73,7 +60,6 @@ module.exports = async (req, res) => {
             [title, author, year, topic, keywords, summary, compressedPdfBuffer]
         );
 
-        // Return success response
         return res.status(200).json({
             success: true,
             message: 'File uploaded successfully',
