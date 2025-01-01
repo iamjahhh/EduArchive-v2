@@ -1,13 +1,16 @@
 const { Pool } = require('pg');
 const { PDFDocument } = require('pdf-lib');
 const { dbFilesConf } = require('../config/Database');
+const { pdfToPng } = require('pdf-to-png-converter');
 const { google } = require('googleapis');
 const { v4: uuidv4 } = require('uuid');
 
 const stream = require('stream');
 const multer = require('multer');
-const puppeteer = require('puppeteer');
-const sharp = require('sharp');
+
+const fs = require('fs').promises;
+const path = require('path');
+const os = require('os');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -55,26 +58,24 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfBuffer) {
     try {
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
+        const tempPdfPath = path.join(os.tmpdir(), `${uuidv4()}.pdf`);
+        await fs.writeFile(tempPdfPath, pdfBuffer);
 
-        const dataUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
-        await page.goto(dataUrl, { waitUntil: 'load' });
-
-        const screenshotBuffer = await page.screenshot({
-            clip: { x: 0, y: 0, width: 800, height: 600 } 
+        const pngPath = path.join(os.tmpdir(), `${uuidv4()}_thumbnail.png`);
+        await pdfToPng.convert(tempPdfPath, {
+            outputFolderPath: path.dirname(pngPath),
+            fileNameWithoutExtension: path.basename(pngPath, '.png'),
+            pageNumbers: [1], 
+            height: 280, 
+            width: 200
         });
 
-        const thumbnail = await sharp(screenshotBuffer)
-            .resize(200, 280, {
-                fit: 'contain',
-                background: { r: 255, g: 255, b: 255, alpha: 1 }
-            })
-            .png({ quality: 90 })
-            .toBuffer();
+        const thumbnailBuffer = await fs.readFile(pngPath);
 
-        await browser.close();
-        return thumbnail;
+        await fs.unlink(tempPdfPath);
+        await fs.unlink(pngPath);
+
+        return thumbnailBuffer;
     } catch (error) {
         console.error('Thumbnail generation error:', error);
         return null;
