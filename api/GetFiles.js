@@ -1,6 +1,5 @@
 const { Pool } = require('pg');
 const { dbFilesConf } = require('../config/Database');
-const { driveConfig } = require('../config/GoogleDrive');
 const { google } = require('googleapis');
 
 const pool = new Pool({
@@ -11,13 +10,13 @@ const pool = new Pool({
 });
 
 const oauth2Client = new google.auth.OAuth2(
-    driveConfig.clientId,
-    driveConfig.clientSecret,
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
     'https://developers.google.com/oauthplayground'
 );
 
 oauth2Client.setCredentials({
-    refresh_token: driveConfig.refreshToken
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN
 });
 
 const drive = google.drive({ version: 'v3', auth: oauth2Client });

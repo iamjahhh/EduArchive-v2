@@ -1,13 +1,9 @@
 const { Pool } = require('pg');
 const { PDFDocument } = require('pdf-lib');
-
 const stream = require('stream');
 const multer = require('multer');
-
 const { dbFilesConf } = require('../config/Database');
 const { google } = require('googleapis');
-const { driveConfig } = require('../config/GoogleDrive');
-
 const { fromBuffer } = require('pdf2pic');
 const { v4: uuidv4 } = require('uuid');
 
@@ -19,13 +15,13 @@ const pool = new Pool({
 });
 
 const oauth2Client = new google.auth.OAuth2(
-    driveConfig.clientId,
-    driveConfig.clientSecret,
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
     'https://developers.google.com/oauthplayground'
 );
 
 oauth2Client.setCredentials({
-    refresh_token: driveConfig.refreshToken
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN
 });
 
 const drive = google.drive({
@@ -82,8 +78,8 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
         bufferStream.end(buffer);
 
         const folderId = isFile 
-            ? driveConfig.filesFolderId 
-            : driveConfig.thumbnailsFolderId;
+            ? process.env.GOOGLE_DRIVE_FILES_FOLDER_ID 
+            : process.env.GOOGLE_DRIVE_THUMBNAILS_FOLDER_ID;
 
         console.log('Starting upload to Drive:', {
             name,
