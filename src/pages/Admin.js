@@ -34,7 +34,6 @@ const Admin = () => {
             
             if (data.success) {
                 setFiles(data.files);
-                console.log(data.files);
             } else {
                 console.error('Error fetching files:', data.message);
             }
@@ -73,13 +72,7 @@ const Admin = () => {
                 body: formData,
             });
 
-            let data;
-            try {
-                data = await response.json();
-            } catch (parseError) {
-                console.error('Response parse error:', parseError);
-                throw new Error('Server response was not in JSON format');
-            }
+            const data = await response.json();
 
             if (!response.ok) {
                 throw new Error(data?.message || data?.error || 'Upload failed');
@@ -166,15 +159,15 @@ const Admin = () => {
                                     : null }
                                 </div>
                                 <div className="form-group">
-                                    <label for="uploadTitle">Title:</label>
+                                    <label htmlFor="uploadTitle">Title:</label>
                                     <input type="text" id="uploadTitle" placeholder="Title" required></input>
                                 </div>
                                 <div className="form-group">
-                                    <label for="uploadYear">Author:</label>
+                                    <label htmlFor="uploadAuthor">Author:</label>
                                     <input type="text" id="uploadAuthor" placeholder="Author" required></input>
                                 </div>
                                 <div className="form-group">
-                                    <label for="uploadYear">Year:</label>
+                                    <label htmlFor="uploadYear">Year:</label>
                                     <input type="text" id="uploadYear" placeholder="Year" required></input>
                                 </div>
                                 <div className="form-group">
@@ -195,11 +188,11 @@ const Admin = () => {
                                     </div>
                                 </div>
                                 <div className="form-group">
-                                    <label for="uploadKeywords">Keywords:</label>
+                                    <label htmlFor="uploadKeywords">Keywords:</label>
                                     <input type="text" id="uploadKeywords" placeholder="Keywords (comma-separated)" required></input>
                                 </div>
                                 <div className="form-group">
-                                    <label for="uploadSummary">Summary:</label>
+                                    <label htmlFor="uploadSummary">Summary:</label>
                                     <textarea id="uploadSummary" placeholder="Summary of the resource" required></textarea>
                                 </div>
                                 <div className={`spinner ${isUploading ? '' : 'hidden'}`}></div>

@@ -38,9 +38,6 @@ module.exports = async (req, res) => {
                 : null
         }));
 
-        console.log('Files retrieved:', files.length);
-        console.log('Files with thumbnails:', files.filter(f => f.thumbnail).length);
-
         return res.status(200).json({
             success: true,
             files
