@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const { dbFilesConf } = require('../config/Database');
 const { PDFDocument } = require('pdf-lib');
 const multer = require('multer');
+const sharp = require('sharp');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -27,6 +28,33 @@ async function compressPDF(buffer) {
     return await pdfDoc.save({ compress: true });
 }
 
+async function generateThumbnail(pdfBuffer) {
+    try {
+        const pdfDoc = await PDFDocument.load(pdfBuffer);
+        const firstPage = pdfDoc.getPages()[0];
+        
+        // Convert PDF page to PNG
+        const pngBytes = await firstPage.render({
+            width: 200,
+            height: 280
+        }).toBuffer();
+
+        // Optimize the PNG using sharp
+        const thumbnail = await sharp(pngBytes)
+            .resize(200, 280, {
+                fit: 'contain',
+                background: { r: 255, g: 255, b: 255 }
+            })
+            .png({ quality: 80 })
+            .toBuffer();
+
+        return thumbnail;
+    } catch (error) {
+        console.error('Thumbnail generation error:', error);
+        return null;
+    }
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
 
@@ -49,15 +77,16 @@ module.exports = async (req, res) => {
 
         const { title, author, year, topic, keywords, summary } = req.body;
         const compressedPdfBuffer = await compressPDF(req.file.buffer);
+        const thumbnailBuffer = await generateThumbnail(req.file.buffer);
 
         client = await pool.connect();
 
         const result = await client.query(
             `INSERT INTO archive 
-            (title, author, year, topic, keywords, summary, file_data) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7) 
+            (title, author, year, topic, keywords, summary, file_data, thumbnail) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
             RETURNING id`,
-            [title, author, year, topic, keywords, summary, compressedPdfBuffer]
+            [title, author, year, topic, keywords, summary, compressedPdfBuffer, thumbnailBuffer]
         );
 
         return res.status(200).json({

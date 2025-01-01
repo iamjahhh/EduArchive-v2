@@ -25,14 +25,22 @@ module.exports = async (req, res) => {
                 keywords,
                 summary,
                 upload_date,
-                downloads
+                downloads,
+                encode(thumbnail, 'base64') as thumbnail
             FROM archive 
             ORDER BY upload_date DESC`
         );
 
+        // Convert thumbnail to base64 URL
+        const files = result.rows.map(file => ({
+            ...file,
+            thumbnail: file.thumbnail ? 
+                `data:image/png;base64,${file.thumbnail}` : null
+        }));
+
         return res.status(200).json({
             success: true,
-            files: result.rows
+            files
         });
 
     } catch (error) {

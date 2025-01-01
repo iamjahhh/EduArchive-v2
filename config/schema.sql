@@ -11,6 +11,7 @@ CREATE TABLE archive (
     keywords TEXT NOT NULL,
     summary TEXT NOT NULL,
     file_data BYTEA NOT NULL,
+    thumbnail BYTEA,
     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     downloads INT DEFAULT 0
 );

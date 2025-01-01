@@ -120,6 +120,13 @@ const Admin = () => {
                 <div className="files-list">
                     {files.map(file => (
                         <div key={file.id} className="file-item">
+                            {file.thumbnail && (
+                                <img 
+                                    src={file.thumbnail} 
+                                    alt={file.title} 
+                                    className="thumbnail"
+                                />
+                            )}
                             <div className="file-info">
                                 <h3 className="title">{file.title}</h3>
                                 <p>Author: {file.author}</p>
