@@ -3,10 +3,9 @@ const { PDFDocument } = require('pdf-lib');
 const { dbFilesConf } = require('../config/Database');
 const { google } = require('googleapis');
 const { v4: uuidv4 } = require('uuid');
-
 const stream = require('stream');
 const multer = require('multer');
-const puppeteer = require('puppeteer');
+const sharp = require('sharp');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -54,20 +53,32 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfBuffer) {
     try {
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
+        const pdfDoc = await PDFDocument.load(pdfBuffer);
+        const page = pdfDoc.getPages()[0];
+        const { width, height } = page.getSize();
 
-        const dataUrl = `data:application/pdf;base64,${pdfBuffer.toString('base64')}`;
-        await page.goto(dataUrl, { waitUntil: 'load' });
+        // Create a new PDF with just the first page
+        const thumbnailPdf = await PDFDocument.create();
+        const [copiedPage] = await thumbnailPdf.copyPages(pdfDoc, [0]);
+        thumbnailPdf.addPage(copiedPage);
 
-        // Take screenshot directly and save as PNG
-        const screenshotBuffer = await page.screenshot({
-            clip: { x: 0, y: 0, width: 800, height: 600 }, 
-            encoding: 'binary'
+        // Convert to PNG with high DPI
+        const pngBytes = await thumbnailPdf.saveAsBase64({
+            imageFormat: 'png',
+            resolution: 300
         });
 
-        await browser.close();
-        return screenshotBuffer;  // Return the raw PNG buffer without sharp
+        // Process with sharp for final thumbnail
+        const pngBuffer = Buffer.from(pngBytes, 'base64');
+        const thumbnail = await sharp(pngBuffer)
+            .resize(200, 280, {
+                fit: 'contain',
+                background: { r: 255, g: 255, b: 255, alpha: 1 }
+            })
+            .png({ quality: 90 })
+            .toBuffer();
+
+        return thumbnail;
     } catch (error) {
         console.error('Thumbnail generation error:', error);
         return null;
