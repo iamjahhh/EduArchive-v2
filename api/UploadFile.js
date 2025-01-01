@@ -2,8 +2,6 @@ const { Pool } = require('pg');
 const { dbFilesConf } = require('../config/Database');
 const { PDFDocument, rgb } = require('pdf-lib');
 const multer = require('multer');
-const sharp = require('sharp');
-const { degrees } = require('pdf-lib');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -31,51 +29,26 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfBuffer) {
     try {
+        // Load the PDF
         const pdfDoc = await PDFDocument.load(pdfBuffer);
-        const firstPage = pdfDoc.getPages()[0];
-        
-        // Get page dimensions
-        const { width, height } = firstPage.getSize();
-        
-        // Create a new PDF with white background for the thumbnail
-        const thumbnailPdf = await PDFDocument.create();
-        const thumbnailPage = thumbnailPdf.addPage([width, height]);
-        
-        // Draw white background
-        thumbnailPage.drawRectangle({
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-            color: rgb(1, 1, 1), // white
-        });
-        
-        // Copy the first page content
-        const [copiedPage] = await thumbnailPdf.copyPages(pdfDoc, [0]);
-        thumbnailPdf.addPage(copiedPage);
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
 
-        // Save as PNG with higher resolution
-        const pngBytes = await thumbnailPdf.saveAsBase64({
+        // Create a new document for the thumbnail
+        const thumbnailDoc = await PDFDocument.create();
+        const [copiedPage] = await thumbnailDoc.copyPages(pdfDoc, [0]);
+        thumbnailDoc.addPage(copiedPage);
+
+        // Convert to PNG with high resolution
+        const pngBytes = await thumbnailDoc.saveAsBase64({
             resolution: 150,
-            pageIndex: 0
+            imageFormat: 'png'
         });
 
-        // Convert base64 to buffer and process with sharp
-        const pngBuffer = Buffer.from(pngBytes, 'base64');
-        
-        // Process with sharp
-        const thumbnail = await sharp(pngBuffer)
-            .resize(200, 280, {
-                fit: 'contain',
-                background: { r: 255, g: 255, b: 255, alpha: 1 }
-            })
-            .png()
-            .toBuffer();
-
-        return thumbnail;
+        // Convert base64 to buffer
+        return Buffer.from(pngBytes, 'base64');
     } catch (error) {
         console.error('Thumbnail generation error:', error);
-        // Return a default thumbnail or null
         return null;
     }
 }
@@ -101,18 +74,34 @@ module.exports = async (req, res) => {
         }
 
         const { title, author, year, topic, keywords, summary } = req.body;
+        console.log('Starting file processing...');
         const compressedPdfBuffer = await compressPDF(req.file.buffer);
+        console.log('PDF compressed, size:', compressedPdfBuffer.length);
+
         const thumbnailBuffer = await generateThumbnail(req.file.buffer);
+        console.log('Thumbnail generated, size:', thumbnailBuffer?.length);
 
         client = await pool.connect();
+        console.log('Database connected');
 
         const result = await client.query(
             `INSERT INTO archive 
             (title, author, year, topic, keywords, summary, file_data, thumbnail) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
             RETURNING id`,
-            [title, author, year, topic, keywords, summary, compressedPdfBuffer, thumbnailBuffer]
+            [
+                title,
+                author,
+                year,
+                topic,
+                keywords,
+                summary,
+                compressedPdfBuffer,
+                thumbnailBuffer
+            ]
         );
+
+        console.log('Insert successful, ID:', result.rows[0].id);
 
         return res.status(200).json({
             success: true,
