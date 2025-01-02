@@ -6,6 +6,8 @@ const { v4: uuidv4 } = require('uuid');
 const stream = require('stream');
 const multer = require('multer');
 const axios = require('axios');
+const chrome = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -53,27 +55,40 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfUrl) {
     try {
-        // Make API request to PDFLayer
-        const response = await axios({
-            method: 'get',
-            url: 'https://api.pdflayer.com/api/convert',
-            params: {
-                access_key: process.env.PDFLAYER_API_KEY,
-                document_url: pdfUrl,
-                page: 1,
-                image_format: 'png',
-                width: 200,
-                height: 280,
-                scale: '2.0',
-                background_color: 'white'
-            },
-            responseType: 'arraybuffer'  
+        const browser = await puppeteer.launch({
+            args: chrome.args,
+            executablePath: await chrome.executablePath,
+            headless: true
         });
 
-        console.error(response.data);
-        return response.data;
+        const page = await browser.newPage();
+        await page.setViewport({ width: 200, height: 280 });
+        
+        // Navigate to the PDF URL
+        await page.goto(`https://drive.google.com/viewerng/viewer?embedded=true&url=${encodeURIComponent(pdfUrl)}`, {
+            waitUntil: 'networkidle0',
+            timeout: 30000
+        });
+
+        // Wait for the PDF to render
+        await page.waitForSelector('#page1', { timeout: 30000 });
+
+        // Take screenshot
+        const screenshot = await page.screenshot({
+            type: 'png',
+            quality: 90,
+            clip: {
+                x: 0,
+                y: 0,
+                width: 200,
+                height: 280
+            }
+        });
+
+        await browser.close();
+        return screenshot;
     } catch (error) {
-        console.error('Thumbnail generation error:', error.response?.data || error.message);
+        console.error('Thumbnail generation error:', error);
         return null;
     }
 }
