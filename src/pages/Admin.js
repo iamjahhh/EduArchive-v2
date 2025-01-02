@@ -57,7 +57,7 @@ const Admin = () => {
 
     const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
 
-    const uploadFileInChunks = async (file) => {
+    const uploadFileInChunks = async (file, formDetails) => {
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         const sessionId = uuidv4();
         let uploadedChunks = 0;
@@ -75,6 +75,13 @@ const Admin = () => {
                 formData.append('fileName', file.name);
                 formData.append('sessionId', sessionId);
 
+                // Add form details to last chunk
+                if (chunkIndex === totalChunks - 1) {
+                    Object.entries(formDetails).forEach(([key, value]) => {
+                        formData.append(key, value);
+                    });
+                }
+
                 const response = await fetch('/api/UploadChunk', {
                     method: 'POST',
                     body: formData,
@@ -87,10 +94,6 @@ const Admin = () => {
 
                 const result = await response.json();
                 uploadedChunks++;
-
-                // Update progress if needed
-                const progress = (uploadedChunks / totalChunks) * 100;
-                console.log(`Upload progress: ${progress.toFixed(2)}%`);
 
                 if (result.fileId) {
                     return result.fileId;
@@ -107,8 +110,34 @@ const Admin = () => {
         setIsUploading(true);
 
         try {
-            const sessionId = await uploadFileInChunks(fileUploaded);
-            if (sessionId) {
+            // Get form details
+            const formDetails = {
+                title: document.getElementById('uploadTitle').value,
+                author: document.getElementById('uploadAuthor').value,
+                year: document.getElementById('uploadYear').value,
+                topic: selectedTopic,
+                keywords: document.getElementById('uploadKeywords').value,
+                summary: document.getElementById('uploadSummary').value
+            };
+
+            const fileId = await uploadFileInChunks(fileUploaded, formDetails);
+            
+            if (fileId) {
+                await fetchFiles();
+                
+                // Close modal and clean up
+                const modalElement = document.getElementById('uploadModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                }
+
+                resetForm();
                 alert('File uploaded successfully!');
             }
         } catch (error) {

@@ -1,6 +1,15 @@
 const { google } = require('googleapis');
 const multer = require('multer');
 const stream = require('stream');
+const { Pool } = require('pg');
+const { dbFilesConf } = require('../config/Database');
+
+const pool = new Pool({
+    ...dbFilesConf,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 
 const upload = multer().single('chunk');
 
@@ -23,6 +32,7 @@ const drive = google.drive({
 const uploadSessions = {};
 
 const uploadChunk = async (req, res) => {
+    let client;
     try {
         await new Promise((resolve, reject) => {
             upload(req, res, (err) => {
@@ -110,13 +120,26 @@ const uploadChunk = async (req, res) => {
                 }
             });
 
+            // Save metadata to database
+            const { title, author, year, topic, keywords, summary } = req.body;
+            
+            client = await pool.connect();
+            const result = await client.query(
+                `INSERT INTO archive 
+                (title, author, year, topic, keywords, summary, file_id) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7) 
+                RETURNING id`,
+                [title, author, year, topic, keywords, summary, session.fileId]
+            );
+
             // Clean up session
             delete uploadSessions[sessionId];
 
             return res.json({
                 success: true,
                 message: 'File uploaded successfully',
-                fileId: session.fileId
+                fileId: session.fileId,
+                recordId: result.rows[0].id
             });
         }
 
@@ -134,6 +157,10 @@ const uploadChunk = async (req, res) => {
             message: 'Chunk upload failed', 
             error: error.message 
         });
+    } finally {
+        if (client) {
+            client.release();
+        }
     }
 };
 
