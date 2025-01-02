@@ -52,34 +52,39 @@ async function compressPDF(buffer) {
 
 async function uploadToDrive(buffer, name, mimeType) {
     try {
-        const fileSize = buffer.length;
+        const bufferStream = new stream.PassThrough();
+        bufferStream.end(buffer);
+
         const fileMetadata = {
             name,
             parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
         };
 
-        const res = await drive.files.create({
+        const media = {
+            mimeType,
+            body: bufferStream
+        };
+
+        // Create file
+        const file = await drive.files.create({
             requestBody: fileMetadata,
-            media: {
-                mimeType,
-                body: buffer
-            },
+            media: media,
             fields: 'id, webContentLink, webViewLink, thumbnailLink'
         });
 
-        const fileId = res.data.id;
-        const uploadUrl = res.config.url;
+        const fileId = file.data.id;
+        const uploadUrl = file.config.url;
 
         let start = 0;
-        const chunkSize = 4 * 1024 * 1024; // 10MB
-        
-        while (start < fileSize) {
-            const end = Math.min(start + chunkSize, fileSize);
+        const chunkSize = 4 * 1024 * 1024; // 4MB
+
+        while (start < buffer.length) {
+            const end = Math.min(start + chunkSize, buffer.length);
             const chunk = buffer.slice(start, end);
 
             await axios.put(uploadUrl, chunk, {
                 headers: {
-                    'Content-Range': `bytes ${start}-${end - 1}/${fileSize}`,
+                    'Content-Range': `bytes ${start}-${end - 1}/${buffer.length}`,
                     'Content-Type': mimeType
                 }
             });
@@ -89,8 +94,8 @@ async function uploadToDrive(buffer, name, mimeType) {
 
         return {
             fileId,
-            webContentLink: res.data.webContentLink.replace('&export=download', ''),
-            webViewLink: res.data.webViewLink,
+            webContentLink: file.data.webContentLink.replace('&export=download', ''),
+            webViewLink: file.data.webViewLink,
             thumbnailLink: `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`
         };
     } catch (error) {
