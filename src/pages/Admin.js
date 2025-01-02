@@ -502,7 +502,7 @@ const Admin = () => {
                 <div className="modal-dialog modal-lg modal-dialog-centered">
                     <div className="modal-content shadow-sm border-0">
                         {/* Modal Header */}
-                        <div className="modal-header bg-primary text-white">
+                        <div className="modal-header text-white">
                             <h5 className="modal-title" id="uploadProgressModal">Uploading Resource</h5>
                             <button type="button" className="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
@@ -532,22 +532,22 @@ const Admin = () => {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-
-                                {/* Progress Bar */}
-                                <div className="progress-container mb-4">
-                                    <div className="progress" style={{ height: "12px", borderRadius: "6px" }}>
-                                        <div
-                                            className="progress-bar progress-bar-striped progress-bar-animated bg-success"
-                                            role="progressbar"
-                                            style={{
-                                                width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%`,
-                                                transition: 'width 0.3s ease',
-                                            }}
-                                            aria-valuenow={(uploadStats.uploadedSize / uploadStats.totalSize) * 100}
-                                            aria-valuemin="0"
-                                            aria-valuemax="100"
-                                        ></div>
+                                    <div className="column">
+                                        <div className="progress-container mb-4">
+                                            <div className="progress" style={{ height: "12px", borderRadius: "6px" }}>
+                                                <div
+                                                    className="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                                    role="progressbar"
+                                                    style={{
+                                                        width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%`,
+                                                        transition: 'width 0.3s ease',
+                                                    }}
+                                                    aria-valuenow={(uploadStats.uploadedSize / uploadStats.totalSize) * 100}
+                                                    aria-valuemin="0"
+                                                    aria-valuemax="100"
+                                                ></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -558,10 +558,10 @@ const Admin = () => {
                                             {/* Status Badge */}
                                             <span
                                                 className={`chunk-status badge me-2 ${chunk.status === 'completed'
-                                                        ? 'bg-success'
-                                                        : chunk.status === 'pending'
-                                                            ? 'bg-warning'
-                                                            : 'bg-danger'
+                                                    ? 'bg-success'
+                                                    : chunk.status === 'pending'
+                                                        ? 'bg-warning'
+                                                        : 'bg-danger'
                                                     }`}
                                                 style={{
                                                     width: "32px",
