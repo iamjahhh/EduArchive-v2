@@ -71,12 +71,9 @@ const uploadChunk = async (req, res) => {
                     parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
                 };
 
+                // Create empty file without media content first
                 const response = await drive.files.create({
                     requestBody: fileMetadata,
-                    media: {
-                        mimeType: 'application/pdf',
-                        body: Buffer.from([])
-                    },
                     fields: 'id'
                 });
 
@@ -90,7 +87,7 @@ const uploadChunk = async (req, res) => {
                     lastAccessed: Date.now()
                 });
 
-                console.log(`Session ${sessionId} initialized`);
+                console.log(`Session ${sessionId} initialized with file ID: ${response.data.id}`);
             } catch (error) {
                 console.error('Session initialization error:', error);
                 throw error;
@@ -130,7 +127,7 @@ const uploadChunk = async (req, res) => {
                 const bufferStream = new stream.PassThrough();
                 bufferStream.end(session.buffer);
 
-                // Upload complete file
+                // Update file with actual content
                 await drive.files.update({
                     fileId: session.fileId,
                     media: {
