@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import "./Admin.css"
+
 import bootstrap from 'bootstrap/dist/js/bootstrap.bundle';
 
 const Admin = () => {
@@ -8,7 +9,7 @@ const Admin = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState('');
     const [files, setFiles] = useState([]);
-    
+
     const resetForm = () => {
         setFileUploaded(null);
         setFileError(null);
@@ -31,7 +32,7 @@ const Admin = () => {
         try {
             const response = await fetch('/api/GetFiles');
             const data = await response.json();
-            
+
             if (data.success) {
                 setFiles(data.files);
             } else {
@@ -94,7 +95,7 @@ const Admin = () => {
                 document.body.style.overflow = '';
                 document.body.style.paddingRight = '';
             }
-            
+
             resetForm();
             alert('File uploaded successfully!');
 
@@ -125,23 +126,23 @@ const Admin = () => {
 
                 <div className="files-list">
                     {files.map(file => (
-                        <div key={file.id} className="file-item">
+                        <div className="file-item">
                             {file.thumbnailUrl && (
-                                <img 
-                                    src={file.thumbnailUrl} 
-                                    alt={file.title} 
+                                <img
+                                    src={file.thumbnailUrl}
+                                    alt={file.title}
                                     className="thumbnail"
                                 />
                             )}
                             <div className="file-info">
-                                <h3 className="title">{file.title}</h3>
-                                <p>Author: {file.author}</p>
-                                <p>Year: {file.year}</p>
-                                <p>Topic: {file.topic}</p>
-                                <p>Keywords: {file.keywords}</p>
-                                <p>Downloads: {file.downloads}</p>
-                                <small>Uploaded: {new Date(file.upload_date).toLocaleDateString()}</small>
-                                <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">View PDF</a>
+                                <div className="title">${file.title}</div>
+                                <div className="topic">${file.topic}</div>
+                                <div className="keywords">${file.keywords.join(', ')}</div>
+                                <div className="year">${file.year}</div>
+                            </div>
+                            <div className="actions">
+                                <button className="upload-btn">Edit</button>
+                                <button className="red-btn">Delete</button>
                             </div>
                         </div>
                     ))}
@@ -159,18 +160,18 @@ const Admin = () => {
                             <form id="uploadForm" className="form-container" onSubmit={handleSubmit}>
                                 <div className="file-input-container">
                                     <label htmlFor="file-upload" className="custom-file-label">Choose PDF File</label>
-                                    <input 
-                                        id="file-upload" 
-                                        type="file" 
-                                        name="file" 
-                                        accept="application/pdf" 
+                                    <input
+                                        id="file-upload"
+                                        type="file"
+                                        name="file"
+                                        accept="application/pdf"
                                         onChange={handleFileChange}
-                                        required 
+                                        required
                                     />
                                     <div className="text-danger mt-2 text-center">{fileError}</div>
-                                    { fileUploaded ?
-                                    <div id="file-name" className="file-name">{fileUploaded.name}</div>
-                                    : null }
+                                    {fileUploaded ?
+                                        <div id="file-name" className="file-name">{fileUploaded.name}</div>
+                                        : null}
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="uploadTitle">Title:</label>
@@ -209,21 +210,20 @@ const Admin = () => {
                                     <label htmlFor="uploadSummary">Summary:</label>
                                     <textarea id="uploadSummary" placeholder="Summary of the resource" required></textarea>
                                 </div>
-                                <div className={`spinner ${isUploading ? '' : 'hidden'}`}></div>
-                                <button 
-                                    type="submit" 
-                                    className="upload-btn"
-                                    disabled={isUploading || !fileUploaded}
-                                >
-                                    {isUploading ? 'Uploading...' : 'Upload Resource'}
-                                </button>
                             </form>
                         </div>
                         <div className="modal-footer">
-                            <button type="button" id="uploadResource" className="upload-btn">Save changes</button>
-                            <button 
-                                type="button" 
-                                className="red-btn" 
+                            <div className={`spinner ${isUploading ? '' : 'hidden'}`}></div>
+                            <button
+                                type="submit"
+                                className="upload-btn"
+                                disabled={isUploading || !fileUploaded}
+                            >
+                                {isUploading ? 'Uploading...' : 'Upload Resource'}
+                            </button>
+                            <button
+                                type="button"
+                                className="red-btn"
                                 data-bs-dismiss="modal"
                                 onClick={resetForm}
                             >
