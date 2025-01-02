@@ -3,6 +3,7 @@ const stream = require('stream');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const upload = multer().single('chunk');
+const axios = require('axios');
 
 const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -40,15 +41,15 @@ const uploadChunk = async (req, res) => {
                 parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID],
             };
 
-            const { data: { id, uploadUrl } } = await drive.files.create({
+            const response = await drive.files.create({
                 requestBody: fileMetadata,
                 media: { mimeType: 'application/pdf' },
-                fields: 'id, uploadUrl',
+                fields: 'id',
                 uploadType: 'resumable',
             });
 
-            req.session.uploadUrl = uploadUrl;
-            req.session.fileId = id;
+            req.session.uploadUrl = response.headers.location;
+            req.session.fileId = response.data.id;
         }
 
         // Upload the current chunk
@@ -56,12 +57,10 @@ const uploadChunk = async (req, res) => {
         const start = chunkIndex * CHUNK_SIZE;
         const end = start + chunk.byteLength - 1;
 
-        await fetch(uploadUrl, {
-            method: 'PUT',
+        await axios.put(uploadUrl, chunk, {
             headers: {
                 'Content-Range': `bytes ${start}-${end}/${totalChunks * CHUNK_SIZE}`,
             },
-            body: chunk,
         });
 
         if (parseInt(chunkIndex) + 1 === parseInt(totalChunks)) {
