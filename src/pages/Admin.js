@@ -10,7 +10,6 @@ const Admin = () => {
     const [selectedTopic, setSelectedTopic] = useState('');
     const [modalFile, setModalFile] = useState(null);
     const [files, setFiles] = useState([]);
-    const [uploadProgress, setUploadProgress] = useState([]);
     const [showUploadProgress, setShowUploadProgress] = useState(false);
     const [uploadStats, setUploadStats] = useState({
         totalSize: 0,
@@ -55,9 +54,7 @@ const Admin = () => {
         }
     }, [showUploadProgress, uploadStats.startTime]);
 
-    // Add effect to initialize modals
     useEffect(() => {
-        // Initialize modals once when component mounts
         progressModalRef.current = new bootstrap.Modal(document.getElementById('uploadProgressModal'), {
             backdrop: 'static',
             keyboard: false
@@ -65,7 +62,6 @@ const Admin = () => {
         successModalRef.current = new bootstrap.Modal(document.getElementById('successModal'));
     }, []);
 
-    // Add effect to handle modal visibility
     useEffect(() => {
         if (progressModalRef.current) {
             if (showUploadProgress) {
@@ -113,14 +109,13 @@ const Admin = () => {
     };
 
     const uploadFileInChunks = async (file, formDetails) => {
-        const CHUNK_SIZE = 4 * 1024 * 1024; // Reduce chunk size to 2MB
+        const CHUNK_SIZE = 4 * 1024 * 1024;
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         const sessionId = uuidv4();
         let uploadedChunks = 0;
         let retryCount = 0;
         const MAX_RETRIES = 3;
 
-        // Initialize upload stats...
         setUploadStats({
             totalSize: file.size,
             uploadedSize: 0,
@@ -168,7 +163,6 @@ const Admin = () => {
                         success = true;
                         uploadedChunks++;
 
-                        // Update chunk stats...
                         const chunkEndTime = Date.now();
                         const chunkTime = chunkEndTime - chunkStartTime;
                         const chunkSpeed = (chunk.size / 1024 / 1024) / (chunkTime / 1000);
@@ -210,12 +204,10 @@ const Admin = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Close upload modal first
         const uploadModalElement = document.getElementById('uploadModal');
         const uploadModalInstance = bootstrap.Modal.getInstance(uploadModalElement);
         if (uploadModalInstance) {
             uploadModalInstance.hide();
-            // Remove backdrop and cleanup
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) backdrop.remove();
             document.body.classList.remove('modal-open');
@@ -223,10 +215,9 @@ const Admin = () => {
         }
 
         setIsUploading(true);
-        setShowUploadProgress(true);  // This will trigger the progress modal
+        setShowUploadProgress(true);
 
         try {
-            // Get form details
             const formDetails = {
                 title: document.getElementById('uploadTitle').value,
                 author: document.getElementById('uploadAuthor').value,
@@ -234,7 +225,7 @@ const Admin = () => {
                 topic: selectedTopic,
                 keywords: document.getElementById('uploadKeywords').value,
                 summary: document.getElementById('uploadSummary').value,
-                originalFileName: fileUploaded.name // Add original filename to metadata
+                originalFileName: fileUploaded.name
             };
 
             const fileId = await uploadFileInChunks(fileUploaded, formDetails);
@@ -258,59 +249,6 @@ const Admin = () => {
                 ...prev,
                 error: error.message
             }));
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    const handleSubmitOld = async (e) => {
-        e.preventDefault();
-        setIsUploading(true);
-
-        try {
-            const formData = new FormData();
-            formData.append('file', fileUploaded);
-            formData.append('title', document.getElementById('uploadTitle').value);
-            formData.append('author', document.getElementById('uploadAuthor').value);
-            formData.append('year', document.getElementById('uploadYear').value);
-            formData.append('topic', selectedTopic);
-            formData.append('keywords', document.getElementById('uploadKeywords').value);
-            formData.append('summary', document.getElementById('uploadSummary').value);
-
-            const response = await fetch('/api/Upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data?.message || data?.error || 'Upload failed');
-            }
-
-            await fetchFiles();
-
-            const modalElement = document.getElementById('uploadModal');
-            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-            if (modalInstance) {
-                modalInstance.hide();
-                // Remove modal backdrop manually
-                const backdrop = document.querySelector('.modal-backdrop');
-                if (backdrop) {
-                    backdrop.remove();
-                }
-                // Reset body classes
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = '';
-                document.body.style.paddingRight = '';
-            }
-
-            resetForm();
-            alert('File uploaded successfully!');
-
-        } catch (error) {
-            console.error('Upload error:', error);
-            alert(`Error uploading file: ${error.message}`);
         } finally {
             setIsUploading(false);
         }
@@ -378,7 +316,7 @@ const Admin = () => {
                     ))}
                 </div>
             </div>
-            
+
             {/*Delete Modal*/}
             <div className="modal fade" id="deleteModal" tabIndex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
@@ -415,7 +353,7 @@ const Admin = () => {
                     </div>
                 </div>
             </div>
-            
+
             {/*Upload Modal*/}
             <div className="modal fade" id="uploadModal" tabIndex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
                 <div className="modal-dialog">
@@ -499,7 +437,7 @@ const Admin = () => {
                     </div>
                 </div>
             </div>
-            
+
             {/*Upload Progress Modal*/}
             <div className="modal fade" id="uploadProgressModal" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-lg modal-dialog-centered">
@@ -514,24 +452,33 @@ const Admin = () => {
                         <div className="modal-body">
                             <div className="upload-progress-container">
                                 {/* Upload Stats */}
-                                <div className="upload-stats mb-4 d-flex justify-content-center align-items-center">
+                                <div className="upload-stats mb-4">
                                     <div className="row text-center g-3">
-                                        <div className="col-12 col-md-4">
-                                            <div className="stat-label text-muted">Total Size</div>
-                                            <div className="stat-value h6 fw-bold mt-1">
-                                                {(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB
+                                        {/* Total Size */}
+                                        <div className="col-12 col-md-4 d-flex justify-content-center align-items-center">
+                                            <div className="stat-card">
+                                                <div className="stat-label text-muted">Total Size</div>
+                                                <div className="stat-value h6 fw-bold mt-1">
+                                                    {(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="col-12 col-md-4">
-                                            <div className="stat-label text-muted">Uploaded</div>
-                                            <div className="stat-value h6 fw-bold mt-1">
-                                                {(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB
+                                        {/* Uploaded */}
+                                        <div className="col-12 col-md-4 d-flex justify-content-center align-items-center">
+                                            <div className="stat-card">
+                                                <div className="stat-label text-muted">Uploaded</div>
+                                                <div className="stat-value h6 fw-bold mt-1">
+                                                    {(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="col-12 col-md-4">
-                                            <div className="stat-label text-muted">Elapsed Time</div>
-                                            <div className="stat-value h6 fw-bold mt-1">
-                                                {(elapsedTime / 1000).toFixed(1)}s
+                                        {/* Elapsed Time */}
+                                        <div className="col-12 col-md-4 d-flex justify-content-center align-items-center">
+                                            <div className="stat-card">
+                                                <div className="stat-label text-muted">Elapsed Time</div>
+                                                <div className="stat-value h6 fw-bold mt-1">
+                                                    {(elapsedTime / 1000).toFixed(1)}s
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -623,37 +570,41 @@ const Admin = () => {
                 </div>
             </div>
 
-
             {/* Success Modal */}
-            <div className="modal fade"
-                id="successModal"
-                tabIndex="-1"
-                aria-hidden="true">
+            <div className="modal fade" id="successModal" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content border-0 shadow">
-                        <div className="modal-body text-center p-5">
-                            <div className="success-icon mb-4">
-                                <i className="fas fa-check-circle text-success" style={{ fontSize: '4rem' }}></i>
+                    <div className="modal-content border-0 shadow-lg">
+                        <div className="modal-body text-center p-4 p-sm-5">
+                            {/* Success Icon */}
+                            <div className="success-icon mb-2">
+                                <i className="fas fa-check-circle text-success" style={{ fontSize: '5rem' }}></i>
                             </div>
-                            <h4 className="mb-4">Upload Successful!</h4>
+
+                            {/* Modal Heading */}
+                            <h4 className="mb-3 fw-bold">Upload Successful!</h4>
+
+                            {/* Upload Details (Optional) */}
                             {uploadResult && (
-                                <div className="upload-details text-start">
+                                <div className="upload-details text-start mb-4">
                                     <p><strong>Title:</strong> {uploadResult.title}</p>
                                     <p><strong>File:</strong> {uploadResult.fileName}</p>
                                     <p><strong>Size:</strong> {(uploadResult.fileSize / 1024 / 1024).toFixed(2)} MB</p>
                                     <p><strong>Upload Time:</strong> {(uploadResult.uploadTime / 1000).toFixed(1)}s</p>
                                 </div>
                             )}
+
+                            {/* Done Button */}
                             <button
-                                className="btn btn-success mt-3"
+                                className="btn btn-success rounded-pill px-4 py-2"
                                 onClick={() => setShowSuccessModal(false)}
                             >
-                                Done
+                                <i className="fas fa-check me-2"></i> Done
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
+
         </>
     );
 }
