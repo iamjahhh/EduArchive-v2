@@ -1,5 +1,4 @@
 .admin-container {
-    max-width: 1200px;
     width: 100%;
     margin: 20px auto;
     padding: 20px;
@@ -297,7 +296,7 @@ button:disabled {
         font-size: 16px;
     }
 
-    .keywords .year {
+    .keywords {
         display: none;
     }
 }
@@ -311,7 +310,7 @@ button:disabled {
         font-size: 16px;
     }
 
-    .keywords .year {
+    .keywords {
         display: none;
     }
 }

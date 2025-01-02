@@ -8,6 +8,7 @@ const Admin = () => {
     const [fileError, setFileError] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState('');
+    const [modalFile, setModalFile] = useState(null);
     const [files, setFiles] = useState([]);
 
     const resetForm = () => {
@@ -114,7 +115,7 @@ const Admin = () => {
     return (
         <>
             <div className="admin-container">
-                <h2 style={{ alignSelf: "center" }}>Admin Panel</h2>
+                <h2 style={{ alignSelf: "center", fontWeight: "600" }}>Admin Panel</h2>
 
                 <button
                     type="button"
@@ -135,17 +136,52 @@ const Admin = () => {
                                 />
                             )}
                             <div className="file-info">
-                                <div className="title">${file.title}</div>
-                                <div className="topic">${file.topic}</div>
-                                <div className="keywords">${file.keywords}</div>
-                                <div className="year">${file.year}</div>
+                                <div className="title">{file.title}</div>
+                                <div className="topic">{file.topic}</div>
+                                <div className="keywords">{file.keywords}</div>
+                                <div className="year">{file.year}</div>
                             </div>
                             <div className="actions">
-                                <button className="upload-btn">Edit</button>
-                                <button className="red-btn">Delete</button>
+                                <button
+                                    type="button"
+                                    className="upload-btn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal"
+                                    onClick={setModalFile(file)}
+                                >Edit</button>
+                                
+                                <button
+                                    type="button"
+                                    className="red-btn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal"
+                                    onClick={setModalFile(file)}
+                                >Delete</button>
                             </div>
                         </div>
                     ))}
+                </div>
+            </div>
+
+            <div className="modal fade" id="deleteModal" tabIndex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="deleteModalLabel">Delete Resource</h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="deleteModal-content">
+                                <span className="close-btn">&times;</span>
+                                <h3 style="margin-top: 10px; margin-bottom: 5px;">Confirm Deletion</h3>
+                                <img id="editThumbnailDelete" className="thumbnail" src=""></img>
+                                <p id="editTitleDelete" style="margin-top: 5px; margin-bottom: 10px; font-weight: bold;"></p>
+                                <p style="margin-top: 5px; margin-bottom: 10px;">Are you sure you want to delete this file? This action cannot be undone.</p>
+                                <button id="confirmDeleteBtn" className="red-btn">Delete</button>
+                                <button type="button" className="cancel-btn">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
