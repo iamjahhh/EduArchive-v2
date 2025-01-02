@@ -137,7 +137,7 @@ const Admin = () => {
                             <div className="file-info">
                                 <div className="title">${file.title}</div>
                                 <div className="topic">${file.topic}</div>
-                                <div className="keywords">${file.keywords.join(', ')}</div>
+                                <div className="keywords">${file.keywords}</div>
                                 <div className="year">${file.year}</div>
                             </div>
                             <div className="actions">
@@ -221,6 +221,7 @@ const Admin = () => {
                                     type="button"
                                     className="red-btn"
                                     data-bs-dismiss="modal"
+                                    style={{ marginLeft: '1rem' }}
                                     onClick={resetForm}
                                 >
                                     Cancel
