@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import "./Admin.css"
 import { v4 as uuidv4 } from 'uuid';
 import bootstrap from 'bootstrap/dist/js/bootstrap.bundle';
@@ -18,6 +18,10 @@ const Admin = () => {
         startTime: null,
         chunks: []
     });
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [uploadResult, setUploadResult] = useState(null);
+    const timerRef = useRef(null);
 
     const resetForm = () => {
         setFileUploaded(null);
@@ -36,6 +40,16 @@ const Admin = () => {
     useEffect(() => {
         fetchFiles();
     }, []);
+
+    useEffect(() => {
+        if (showUploadProgress && uploadStats.startTime) {
+            timerRef.current = setInterval(() => {
+                setElapsedTime(Date.now() - uploadStats.startTime);
+            }, 100);
+
+            return () => clearInterval(timerRef.current);
+        }
+    }, [showUploadProgress, uploadStats.startTime]);
 
     const fetchFiles = async () => {
         try {
@@ -64,7 +78,7 @@ const Admin = () => {
     };
 
     const uploadFileInChunks = async (file, formDetails) => {
-        const CHUNK_SIZE = 2 * 1024 * 1024; // Reduce chunk size to 2MB
+        const CHUNK_SIZE = 4 * 1024 * 1024; // Reduce chunk size to 2MB
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         const sessionId = uuidv4();
         let uploadedChunks = 0;
@@ -161,15 +175,11 @@ const Admin = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Close upload modal immediately
-        const modalElement = document.getElementById('uploadModal');
-        const modalInstance = bootstrap.Modal.getInstance(modalElement);
-        if (modalInstance) {
-            modalInstance.hide();
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) backdrop.remove();
-            document.body.classList.remove('modal-open');
-            document.body.style.paddingRight = '';
+        // Close upload modal first
+        const uploadModalElement = document.getElementById('uploadModal');
+        const uploadModalInstance = bootstrap.Modal.getInstance(uploadModalElement);
+        if (uploadModalInstance) {
+            uploadModalInstance.hide();
         }
 
         setIsUploading(true);
@@ -191,21 +201,16 @@ const Admin = () => {
 
             if (fileId) {
                 await fetchFiles();
-
-                // Close modal and clean up
-                const modalElement = document.getElementById('uploadModal');
-                const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                if (modalInstance) {
-                    modalInstance.hide();
-                    const backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) backdrop.remove();
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
-                    document.body.style.paddingRight = '';
-                }
-
+                setShowUploadProgress(false);
+                setUploadResult({
+                    title: formDetails.title,
+                    fileName: fileUploaded.name,
+                    fileSize: fileUploaded.size,
+                    uploadTime: elapsedTime,
+                    chunks: uploadStats.chunks.length
+                });
+                setShowSuccessModal(true);
                 resetForm();
-                alert('File uploaded successfully!');
             }
         } catch (error) {
             console.error('Error uploading file:', error);
@@ -454,60 +459,105 @@ const Admin = () => {
             </div>
 
             {/* Modern Upload Progress Modal */}
-            <div className={`modal fade upload-progress-modal ${showUploadProgress ? 'show' : ''}`}
-                id="uploadProgressModal"
+            <div className="modal fade upload-progress-modal" 
+                id="uploadProgressModal" 
                 tabIndex="-1"
-                style={{ display: showUploadProgress ? 'block' : 'none' }}>
-                <div className="modal-dialog modal-lg">
-                    <div className="modal-content upload-progress-content">
-                        <div className="modal-header upload-progress-header">
-                            <h5 className="modal-title">Uploading {fileUploaded?.name}</h5>
+                data-bs-backdrop="static"
+                show={showUploadProgress}>
+                <div className="modal-dialog modal-dialog-centered modal-lg">
+                    <div className="modal-content border-0 shadow-lg">
+                        <div className="modal-header border-0 bg-light">
+                            <h5 className="modal-title">
+                                <i className="fas fa-cloud-upload-alt text-primary me-2"></i>
+                                Uploading {fileUploaded?.name}
+                            </h5>
                         </div>
-                        <div className="modal-body">
-                            <div className="upload-stats">
-                                <div className="stats-grid">
-                                    <div>
-                                        <div className="stat-label">Total Size</div>
-                                        <div className="stat-value">{(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB</div>
+                        <div className="modal-body p-4">
+                            <div className="upload-stats card border-0 bg-light mb-4">
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <div className="stat-label text-muted mb-1">Total Size</div>
+                                            <div className="stat-value h5 mb-0">
+                                                {(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB
+                                            </div>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <div className="stat-label text-muted mb-1">Uploaded</div>
+                                            <div className="stat-value h5 mb-0">
+                                                {(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB
+                                            </div>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <div className="stat-label text-muted mb-1">Elapsed Time</div>
+                                            <div className="stat-value h5 mb-0">
+                                                {(elapsedTime / 1000).toFixed(1)}s
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div className="stat-label">Uploaded</div>
-                                        <div className="stat-value">{(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB</div>
+                                    <div className="progress mt-3" style={{ height: "8px" }}>
+                                        <div 
+                                            className="progress-bar bg-success" 
+                                            style={{ 
+                                                width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%`,
+                                                transition: 'width 0.3s ease'
+                                            }}
+                                        />
                                     </div>
-                                    <div>
-                                        <div className="stat-label">Elapsed Time</div>
-                                        <div className="stat-value">{((Date.now() - uploadStats.startTime) / 1000).toFixed(1)}s</div>
-                                    </div>
-                                </div>
-                                <div className="progress-bar-container">
-                                    <div 
-                                        className="progress-bar" 
-                                        style={{ width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%` }}
-                                    />
                                 </div>
                             </div>
                             <div className="chunks-list">
                                 {uploadStats.chunks.map((chunk, index) => (
-                                    <div key={index} className="chunk-item">
-                                        <span className={`chunk-status ${chunk.status}`}>
-                                            {chunk.status === 'completed' && '✓'}
-                                            {chunk.status === 'pending' && '⏳'}
-                                            {chunk.status === 'failed' && '✕'}
+                                    <div key={index} className="chunk-item d-flex align-items-center">
+                                        <span className={`chunk-status badge ${
+                                            chunk.status === 'completed' ? 'bg-success' :
+                                            chunk.status === 'pending' ? 'bg-warning' :
+                                            'bg-danger'
+                                        }`}>
+                                            {chunk.status === 'completed' && <i className="fas fa-check"></i>}
+                                            {chunk.status === 'pending' && <i className="fas fa-clock"></i>}
+                                            {chunk.status === 'failed' && <i className="fas fa-times"></i>}
                                         </span>
-                                        <span>Chunk {index + 1}</span>
+                                        <span className="ms-2">Chunk {index + 1}</span>
                                         {chunk.speed > 0 && (
-                                            <span className="chunk-stats">
+                                            <span className="chunk-stats ms-auto badge bg-light text-dark">
                                                 {chunk.speed.toFixed(2)} MB/s
                                             </span>
                                         )}
                                     </div>
                                 ))}
                             </div>
-                            {uploadStats.error && (
-                                <div className="error-message">
-                                    Error: {uploadStats.error}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Success Modal */}
+            <div className="modal fade" 
+                id="successModal" 
+                tabIndex="-1"
+                show={showSuccessModal}>
+                <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-content border-0 shadow">
+                        <div className="modal-body text-center p-5">
+                            <div className="success-icon mb-4">
+                                <i className="fas fa-check-circle text-success" style={{ fontSize: '4rem' }}></i>
+                            </div>
+                            <h4 className="mb-4">Upload Successful!</h4>
+                            {uploadResult && (
+                                <div className="upload-details text-start">
+                                    <p><strong>Title:</strong> {uploadResult.title}</p>
+                                    <p><strong>File:</strong> {uploadResult.fileName}</p>
+                                    <p><strong>Size:</strong> {(uploadResult.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                                    <p><strong>Upload Time:</strong> {(uploadResult.uploadTime / 1000).toFixed(1)}s</p>
                                 </div>
                             )}
+                            <button 
+                                className="btn btn-success mt-3" 
+                                onClick={() => setShowSuccessModal(false)}
+                            >
+                                Done
+                            </button>
                         </div>
                     </div>
                 </div>
