@@ -51,18 +51,14 @@ async function compressPDF(buffer) {
     return Buffer.from(compressedPdfBytes);
 }
 
-async function generateThumbnail(pdfBuffer) {
+async function generateThumbnail(pdfUrl) {
     try {
-        // Convert PDF buffer to base64
-        const base64Pdf = pdfBuffer.toString('base64');
-
-        // Call PDFLayer API
         const response = await axios({
             method: 'post',
             url: 'https://api.pdflayer.com/api/convert',
             params: {
                 access_key: process.env.PDFLAYER_API_KEY,
-                document_url: `data:application/pdf;base64,${base64Pdf}`,
+                document_url: pdfUrl,
                 page: 1,
                 image_format: 'png',
                 width: 200,
@@ -72,9 +68,7 @@ async function generateThumbnail(pdfBuffer) {
             }
         });
 
-        // Convert response to buffer
-        const thumbnailBuffer = Buffer.from(response.data, 'base64');
-        return thumbnailBuffer;
+        return Buffer.from(response.data, 'base64');
     } catch (error) {
         console.error('Thumbnail generation error:', error);
         return null;
@@ -100,11 +94,11 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             body: bufferStream
         };
 
-        // Create file
+        // Create file with more fields in response
         const file = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
-            fields: 'id, webContentLink'
+            fields: 'id, webContentLink, webViewLink'
         });
 
         // Set public permissions
@@ -116,7 +110,7 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             }
         });
 
-        // Update sharing settings to make the file accessible
+        // Update sharing settings
         await drive.files.update({
             fileId: file.data.id,
             requestBody: {
@@ -125,7 +119,11 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             }
         });
 
-        return file.data.id;
+        return {
+            fileId: file.data.id,
+            webContentLink: file.data.webContentLink,
+            webViewLink: file.data.webViewLink
+        };
     } catch (error) {
         console.error('Drive upload error:', error);
         throw error;
@@ -154,10 +152,15 @@ module.exports = async (req, res) => {
 
         const { title, author, year, topic, keywords, summary } = req.body;
         const compressedPdfBuffer = await compressPDF(req.file.buffer);
-        const thumbnailBuffer = await generateThumbnail(req.file.buffer);
 
-        const fileId = await uploadToDrive(compressedPdfBuffer, `${uuidv4()}.pdf`, 'application/pdf', true);
-        const thumbnailId = await uploadToDrive(thumbnailBuffer, `${uuidv4()}_thumbnail.png`, 'image/png', false);
+        // First upload the PDF
+        const pdfUpload = await uploadToDrive(compressedPdfBuffer, `${uuidv4()}.pdf`, 'application/pdf', true);
+        
+        // Generate thumbnail using the uploaded PDF's URL
+        const thumbnailBuffer = await generateThumbnail(pdfUpload.webContentLink);
+        
+        // Upload the thumbnail
+        const thumbnailUpload = await uploadToDrive(thumbnailBuffer, `${uuidv4()}_thumbnail.png`, 'image/png', false);
 
         client = await pool.connect();
 
@@ -166,7 +169,7 @@ module.exports = async (req, res) => {
             (title, author, year, topic, keywords, summary, file_id, thumbnail_id) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
             RETURNING id`,
-            [title, author, year, topic, keywords, summary, fileId, thumbnailId]
+            [title, author, year, topic, keywords, summary, pdfUpload.fileId, thumbnailUpload.fileId]
         );
 
         return res.status(200).json({
