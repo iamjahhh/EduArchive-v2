@@ -5,6 +5,7 @@ const { google } = require('googleapis');
 const { v4: uuidv4 } = require('uuid');
 const stream = require('stream');
 const multer = require('multer');
+const axios = require('axios');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -51,49 +52,46 @@ async function compressPDF(buffer) {
 
 async function uploadToDrive(buffer, name, mimeType) {
     try {
-        const bufferStream = new stream.PassThrough();
-        bufferStream.end(buffer);
-
+        const fileSize = buffer.length;
         const fileMetadata = {
             name,
             parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
         };
 
-        const media = {
-            mimeType,
-            body: bufferStream
-        };
-
-        // Create file
-        const file = await drive.files.create({
+        const res = await drive.files.create({
             requestBody: fileMetadata,
-            media: media,
+            media: {
+                mimeType,
+                body: buffer
+            },
             fields: 'id, webContentLink, webViewLink, thumbnailLink'
         });
 
-        // Set public permissions
-        await drive.permissions.create({
-            fileId: file.data.id,
-            requestBody: {
-                role: 'reader',
-                type: 'anyone'
-            }
-        });
+        const fileId = res.data.id;
+        const uploadUrl = res.config.url;
 
-        // Update sharing settings
-        await drive.files.update({
-            fileId: file.data.id,
-            requestBody: {
-                copyRequiresWriterPermission: false,
-                writersCanShare: true
-            }
-        });
+        let start = 0;
+        const chunkSize = 4 * 1024 * 1024; // 10MB
+        
+        while (start < fileSize) {
+            const end = Math.min(start + chunkSize, fileSize);
+            const chunk = buffer.slice(start, end);
+
+            await axios.put(uploadUrl, chunk, {
+                headers: {
+                    'Content-Range': `bytes ${start}-${end - 1}/${fileSize}`,
+                    'Content-Type': mimeType
+                }
+            });
+
+            start = end;
+        }
 
         return {
-            fileId: file.data.id,
-            webContentLink: file.data.webContentLink.replace('&export=download', ''),
-            webViewLink: file.data.webViewLink,
-            thumbnailLink: `https://drive.google.com/thumbnail?id=${file.data.id}&sz=w200`
+            fileId,
+            webContentLink: res.data.webContentLink.replace('&export=download', ''),
+            webViewLink: res.data.webViewLink,
+            thumbnailLink: `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`
         };
     } catch (error) {
         console.error('Drive upload error:', error);

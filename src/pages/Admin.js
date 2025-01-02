@@ -200,7 +200,7 @@ const Admin = () => {
                                         <button id="confirmDeleteBtn" className="btn btn-danger">Delete</button>
                                     </>
                                 )}
-                                <button type="button" style={{ marginLeft: "1rem" }} className="btn btn-secondary">Cancel</button>
+                                <button type="button" style={{ marginLeft: "15px" }} className="btn btn-secondary">Cancel</button>
                             </div>
                         </div>
                     </div>
