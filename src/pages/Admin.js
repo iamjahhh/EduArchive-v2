@@ -23,6 +23,10 @@ const Admin = () => {
     const [uploadResult, setUploadResult] = useState(null);
     const timerRef = useRef(null);
 
+    // Add refs for modals
+    const progressModalRef = useRef(null);
+    const successModalRef = useRef(null);
+
     const resetForm = () => {
         setFileUploaded(null);
         setFileError(null);
@@ -51,30 +55,36 @@ const Admin = () => {
         }
     }, [showUploadProgress, uploadStats.startTime]);
 
+    // Add effect to initialize modals
     useEffect(() => {
-        // Initialize both modals using Bootstrap
-        const progressModal = new bootstrap.Modal(document.getElementById('uploadProgressModal'), {
+        // Initialize modals once when component mounts
+        progressModalRef.current = new bootstrap.Modal(document.getElementById('uploadProgressModal'), {
             backdrop: 'static',
             keyboard: false
         });
+        successModalRef.current = new bootstrap.Modal(document.getElementById('successModal'));
+    }, []);
 
-        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-
-        // Show/hide progress modal based on state
-        if (showUploadProgress) {
-            progressModal.show();
-        } else {
-            progressModal.hide();
+    // Add effect to handle modal visibility
+    useEffect(() => {
+        if (progressModalRef.current) {
+            if (showUploadProgress) {
+                progressModalRef.current.show();
+            } else {
+                progressModalRef.current.hide();
+            }
         }
+    }, [showUploadProgress]);
 
-        // Show/hide success modal based on state
-        if (showSuccessModal) {
-            successModal.show();
-        } else {
-            successModal.hide();
+    useEffect(() => {
+        if (successModalRef.current) {
+            if (showSuccessModal) {
+                successModalRef.current.show();
+            } else {
+                successModalRef.current.hide();
+            }
         }
-
-    }, [showUploadProgress, showSuccessModal]);
+    }, [showSuccessModal]);
 
     const fetchFiles = async () => {
         try {
@@ -205,10 +215,15 @@ const Admin = () => {
         const uploadModalInstance = bootstrap.Modal.getInstance(uploadModalElement);
         if (uploadModalInstance) {
             uploadModalInstance.hide();
+            // Remove backdrop and cleanup
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '';
         }
 
         setIsUploading(true);
-        setShowUploadProgress(true);
+        setShowUploadProgress(true);  // This will trigger the progress modal
 
         try {
             // Get form details
@@ -487,7 +502,7 @@ const Admin = () => {
             <div className="modal fade upload-progress-modal" 
                 id="uploadProgressModal" 
                 tabIndex="-1"
-                data-bs-backdrop="static">
+                aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered modal-lg">
                     <div className="modal-content border-0 shadow-lg">
                         <div className="modal-header border-0 bg-light">
@@ -559,7 +574,8 @@ const Admin = () => {
             {/* Success Modal */}
             <div className="modal fade" 
                 id="successModal" 
-                tabIndex="-1">
+                tabIndex="-1"
+                aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content border-0 shadow">
                         <div className="modal-body text-center p-5">
