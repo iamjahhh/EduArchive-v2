@@ -51,6 +51,31 @@ const Admin = () => {
         }
     }, [showUploadProgress, uploadStats.startTime]);
 
+    useEffect(() => {
+        // Initialize both modals using Bootstrap
+        const progressModal = new bootstrap.Modal(document.getElementById('uploadProgressModal'), {
+            backdrop: 'static',
+            keyboard: false
+        });
+
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+
+        // Show/hide progress modal based on state
+        if (showUploadProgress) {
+            progressModal.show();
+        } else {
+            progressModal.hide();
+        }
+
+        // Show/hide success modal based on state
+        if (showSuccessModal) {
+            successModal.show();
+        } else {
+            successModal.hide();
+        }
+
+    }, [showUploadProgress, showSuccessModal]);
+
     const fetchFiles = async () => {
         try {
             const response = await fetch('/api/GetFiles');
@@ -462,8 +487,7 @@ const Admin = () => {
             <div className="modal fade upload-progress-modal" 
                 id="uploadProgressModal" 
                 tabIndex="-1"
-                data-bs-backdrop="static"
-                show={showUploadProgress}>
+                data-bs-backdrop="static">
                 <div className="modal-dialog modal-dialog-centered modal-lg">
                     <div className="modal-content border-0 shadow-lg">
                         <div className="modal-header border-0 bg-light">
@@ -535,8 +559,7 @@ const Admin = () => {
             {/* Success Modal */}
             <div className="modal fade" 
                 id="successModal" 
-                tabIndex="-1"
-                show={showSuccessModal}>
+                tabIndex="-1">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content border-0 shadow">
                         <div className="modal-body text-center p-5">
