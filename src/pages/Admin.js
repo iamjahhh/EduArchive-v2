@@ -10,6 +10,14 @@ const Admin = () => {
     const [selectedTopic, setSelectedTopic] = useState('');
     const [modalFile, setModalFile] = useState(null);
     const [files, setFiles] = useState([]);
+    const [uploadProgress, setUploadProgress] = useState([]);
+    const [showUploadProgress, setShowUploadProgress] = useState(false);
+    const [uploadStats, setUploadStats] = useState({
+        totalSize: 0,
+        uploadedSize: 0,
+        startTime: null,
+        chunks: []
+    });
 
     const resetForm = () => {
         setFileUploaded(null);
@@ -62,11 +70,21 @@ const Admin = () => {
         const sessionId = uuidv4();
         let uploadedChunks = 0;
 
+        // Initialize upload stats
+        setUploadStats({
+            totalSize: file.size,
+            uploadedSize: 0,
+            startTime: Date.now(),
+            chunks: Array(totalChunks).fill({ status: 'pending', speed: 0, time: 0 })
+        });
+        setShowUploadProgress(true);
+
         try {
             for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
                 const start = chunkIndex * CHUNK_SIZE;
                 const end = Math.min(file.size, start + CHUNK_SIZE);
                 const chunk = file.slice(start, end);
+                const chunkStartTime = Date.now();
 
                 const formData = new FormData();
                 formData.append('chunk', chunk);
@@ -74,8 +92,8 @@ const Admin = () => {
                 formData.append('totalChunks', totalChunks.toString());
                 formData.append('fileName', file.name);
                 formData.append('sessionId', sessionId);
+                formData.append('chunkSize', chunk.size.toString());
 
-                // Add form details to last chunk
                 if (chunkIndex === totalChunks - 1) {
                     Object.entries(formDetails).forEach(([key, value]) => {
                         formData.append(key, value);
@@ -95,12 +113,33 @@ const Admin = () => {
                 const result = await response.json();
                 uploadedChunks++;
 
+                // Calculate chunk stats
+                const chunkEndTime = Date.now();
+                const chunkTime = chunkEndTime - chunkStartTime;
+                const chunkSpeed = (chunk.size / 1024 / 1024) / (chunkTime / 1000); // MB/s
+
+                // Update upload stats
+                setUploadStats(prev => ({
+                    ...prev,
+                    uploadedSize: prev.uploadedSize + chunk.size,
+                    chunks: prev.chunks.map((c, i) => 
+                        i === chunkIndex ? 
+                        { status: 'completed', speed: chunkSpeed, time: chunkTime } : 
+                        c
+                    )
+                }));
+
                 if (result.fileId) {
                     return result.fileId;
                 }
             }
         } catch (error) {
-            console.error('Upload error:', error);
+            setUploadStats(prev => ({
+                ...prev,
+                chunks: prev.chunks.map(c => 
+                    c.status === 'pending' ? { ...c, status: 'failed' } : c
+                )
+            }));
             throw error;
         }
     };
@@ -117,7 +156,8 @@ const Admin = () => {
                 year: document.getElementById('uploadYear').value,
                 topic: selectedTopic,
                 keywords: document.getElementById('uploadKeywords').value,
-                summary: document.getElementById('uploadSummary').value
+                summary: document.getElementById('uploadSummary').value,
+                originalFileName: fileUploaded.name // Add original filename to metadata
             };
 
             const fileId = await uploadFileInChunks(fileUploaded, formDetails);
@@ -377,6 +417,46 @@ const Admin = () => {
                                 >
                                     Cancel
                                 </button>                            </form>                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Upload Progress Modal */}
+            <div className={`modal fade ${showUploadProgress ? 'show' : ''}`} 
+                id="uploadProgressModal" 
+                tabIndex="-1" 
+                style={{ display: showUploadProgress ? 'block' : 'none' }}>
+                <div className="modal-dialog modal-lg">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">Upload Progress</h5>
+                        </div>
+                        <div className="modal-body">
+                            <div className="upload-stats">
+                                <div>Total Size: {(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB</div>
+                                <div>Uploaded: {(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB</div>
+                                <div>Progress: {((uploadStats.uploadedSize / uploadStats.totalSize) * 100).toFixed(1)}%</div>
+                                <div>Elapsed Time: {((Date.now() - uploadStats.startTime) / 1000).toFixed(1)}s</div>
+                            </div>
+                            <div className="chunks-list">
+                                {uploadStats.chunks.map((chunk, index) => (
+                                    <div key={index} className="chunk-item">
+                                        <span className="chunk-status">
+                                            {chunk.status === 'completed' && '✓'}
+                                            {chunk.status === 'pending' && '⏳'}
+                                            {chunk.status === 'failed' && '❌'}
+                                        </span>
+                                        <span>Chunk {index + 1}</span>
+                                        {chunk.speed > 0 && (
+                                            <span className="chunk-stats">
+                                                {chunk.speed.toFixed(2)} MB/s
+                                                ({(chunk.time / 1000).toFixed(2)}s)
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

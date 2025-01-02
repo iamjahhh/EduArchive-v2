@@ -3,6 +3,7 @@ const multer = require('multer');
 const stream = require('stream');
 const { Pool } = require('pg');
 const { dbFilesConf } = require('../config/Database');
+const { v4: uuidv4 } = require('uuid');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -50,9 +51,9 @@ const uploadChunk = async (req, res) => {
         const chunkSize = chunk.length;
 
         if (chunkIndex === '0') {
-            // Initialize the upload session
+            const uniqueFileName = `${uuidv4()}.pdf`;
             const fileMetadata = {
-                name: fileName,
+                name: uniqueFileName,
                 parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
             };
 
@@ -73,7 +74,9 @@ const uploadChunk = async (req, res) => {
                 fileId: response.data.id,
                 buffer: Buffer.alloc(0),
                 totalSize: parseInt(totalChunks) * chunkSize,
-                receivedChunks: new Set()
+                receivedChunks: new Set(),
+                originalFileName: fileName,
+                uniqueFileName: uniqueFileName
             };
         }
 
@@ -111,7 +114,7 @@ const uploadChunk = async (req, res) => {
                 fields: 'id'
             });
 
-            // Set file permissions
+            // Set file permissions and enable thumbnail generation
             await drive.permissions.create({
                 fileId: session.fileId,
                 requestBody: {
@@ -120,16 +123,24 @@ const uploadChunk = async (req, res) => {
                 }
             });
 
+            // Force thumbnail generation
+            await drive.files.get({
+                fileId: session.fileId,
+                fields: 'thumbnailLink',
+                supportsAllDrives: true
+            });
+
             // Save metadata to database
             const { title, author, year, topic, keywords, summary } = req.body;
             
             client = await pool.connect();
             const result = await client.query(
                 `INSERT INTO archive 
-                (title, author, year, topic, keywords, summary, file_id) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7) 
+                (title, author, year, topic, keywords, summary, file_id, original_filename, status) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
                 RETURNING id`,
-                [title, author, year, topic, keywords, summary, session.fileId]
+                [title, author, year, topic, keywords, summary, session.fileId, 
+                 session.originalFileName, 'processing']
             );
 
             // Clean up session
@@ -139,15 +150,19 @@ const uploadChunk = async (req, res) => {
                 success: true,
                 message: 'File uploaded successfully',
                 fileId: session.fileId,
-                recordId: result.rows[0].id
+                recordId: result.rows[0].id,
+                thumbnailPending: true
             });
         }
 
-        // Return progress for non-final chunks
+        // Return detailed progress for non-final chunks
         return res.json({
             success: true,
             message: 'Chunk received',
-            progress: (session.receivedChunks.size / parseInt(totalChunks)) * 100
+            progress: (session.receivedChunks.size / parseInt(totalChunks)) * 100,
+            chunkSize: req.file.size,
+            receivedChunks: session.receivedChunks.size,
+            totalChunks: parseInt(totalChunks)
         });
 
     } catch (error) {

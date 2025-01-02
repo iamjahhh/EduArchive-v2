@@ -326,3 +326,40 @@ button:disabled {
         display: none;
     }
 }
+
+/* ...existing styles... */
+
+.upload-stats {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.chunks-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.chunk-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    gap: 10px;
+}
+
+.chunk-status {
+    font-size: 1.2em;
+    width: 24px;
+}
+
+.chunk-stats {
+    margin-left: auto;
+    color: #666;
+    font-size: 0.9em;
+}
