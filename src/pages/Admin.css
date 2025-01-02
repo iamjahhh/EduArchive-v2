@@ -528,3 +528,118 @@ button:disabled {
 }
 
 /* Remove existing chunk-status styles and use Bootstrap badges instead */
+
+/* Modern Modal Styles - Updated */
+.modal-backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.upload-progress-modal .modal-dialog {
+    max-width: 90%;
+    margin: 1.25rem auto;
+}
+
+@media (min-width: 992px) {
+    .upload-progress-modal .modal-dialog {
+        max-width: 800px;
+    }
+}
+
+.upload-progress-modal .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.upload-stats {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #0066ff;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    font-family: 'SF Mono', 'Roboto Mono', monospace;
+}
+
+.chunks-container {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.chunk-item {
+    background: white;
+    margin-bottom: 0.75rem;
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s ease;
+}
+
+/* Update progress bar styles */
+.progress {
+    height: 8px !important;
+    border-radius: 8px !important;
+    background: #e2e8f0 !important;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #0066ff, #00a3ff) !important;
+    transition: width 0.3s ease !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .chunk-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .chunk-stats {
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+}

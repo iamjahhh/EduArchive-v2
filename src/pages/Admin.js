@@ -328,6 +328,22 @@ const Admin = () => {
         setModalFile(file);
     };
 
+    // Format time function
+    const formatTime = (ms) => {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        return minutes > 0 
+            ? `${minutes}m ${seconds % 60}s`
+            : `${seconds}s`;
+    };
+
+    // Format size function
+    const formatSize = (bytes) => {
+        const mb = bytes / (1024 * 1024);
+        return mb.toFixed(2);
+    };
+
+    // Update the progress modal JSX
     return (
         <>
             <div className="admin-container">
@@ -503,63 +519,68 @@ const Admin = () => {
                 id="uploadProgressModal" 
                 tabIndex="-1"
                 aria-hidden="true">
-                <div className="modal-dialog modal-dialog-centered modal-lg">
-                    <div className="modal-content border-0 shadow-lg">
-                        <div className="modal-header border-0 bg-light">
-                            <h5 className="modal-title">
-                                <i className="fas fa-cloud-upload-alt text-primary me-2"></i>
-                                Uploading {fileUploaded?.name}
+                <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-content">
+                        <div className="modal-header border-0">
+                            <h5 className="modal-title d-flex align-items-center gap-2">
+                                <i className="fas fa-cloud-upload-alt text-primary"></i>
+                                <span className="text-truncate">
+                                    {fileUploaded?.name || 'Uploading file...'}
+                                </span>
                             </h5>
                         </div>
-                        <div className="modal-body p-4">
-                            <div className="upload-stats card border-0 bg-light mb-4">
-                                <div className="card-body">
-                                    <div className="row">
-                                        <div className="col-md-4">
-                                            <div className="stat-label text-muted mb-1">Total Size</div>
-                                            <div className="stat-value h5 mb-0">
-                                                {(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB
-                                            </div>
-                                        </div>
-                                        <div className="col-md-4">
-                                            <div className="stat-label text-muted mb-1">Uploaded</div>
-                                            <div className="stat-value h5 mb-0">
-                                                {(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB
-                                            </div>
-                                        </div>
-                                        <div className="col-md-4">
-                                            <div className="stat-label text-muted mb-1">Elapsed Time</div>
-                                            <div className="stat-value h5 mb-0">
-                                                {(elapsedTime / 1000).toFixed(1)}s
-                                            </div>
+                        <div className="modal-body">
+                            <div className="upload-stats">
+                                <div className="stats-grid">
+                                    <div className="stat-item">
+                                        <i className="fas fa-file-alt stat-icon"></i>
+                                        <div className="stat-label">Total Size</div>
+                                        <div className="stat-value">
+                                            {formatSize(uploadStats.totalSize)} MB
                                         </div>
                                     </div>
-                                    <div className="progress mt-3" style={{ height: "8px" }}>
-                                        <div 
-                                            className="progress-bar bg-success" 
-                                            style={{ 
-                                                width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%`,
-                                                transition: 'width 0.3s ease'
-                                            }}
-                                        />
+                                    <div className="stat-item">
+                                        <i className="fas fa-upload stat-icon"></i>
+                                        <div className="stat-label">Uploaded</div>
+                                        <div className="stat-value">
+                                            {formatSize(uploadStats.uploadedSize)} MB
+                                        </div>
+                                    </div>
+                                    <div className="stat-item">
+                                        <i className="fas fa-clock stat-icon"></i>
+                                        <div className="stat-label">Time</div>
+                                        <div className="stat-value">
+                                            {formatTime(elapsedTime)}
+                                        </div>
                                     </div>
                                 </div>
+                                <div className="progress mt-4">
+                                    <div 
+                                        className="progress-bar" 
+                                        style={{ 
+                                            width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%` 
+                                        }}
+                                    />
+                                </div>
                             </div>
-                            <div className="chunks-list">
+                            <div className="chunks-container mt-4">
                                 {uploadStats.chunks.map((chunk, index) => (
-                                    <div key={index} className="chunk-item d-flex align-items-center">
+                                    <div key={index} className="chunk-item">
                                         <span className={`chunk-status badge ${
                                             chunk.status === 'completed' ? 'bg-success' :
                                             chunk.status === 'pending' ? 'bg-warning' :
                                             'bg-danger'
                                         }`}>
-                                            {chunk.status === 'completed' && <i className="fas fa-check"></i>}
-                                            {chunk.status === 'pending' && <i className="fas fa-clock"></i>}
-                                            {chunk.status === 'failed' && <i className="fas fa-times"></i>}
+                                            <i className={
+                                                chunk.status === 'completed' ? 'fas fa-check' :
+                                                chunk.status === 'pending' ? 'fas fa-spinner fa-spin' :
+                                                'fas fa-times'
+                                            }></i>
                                         </span>
-                                        <span className="ms-2">Chunk {index + 1}</span>
+                                        <span>Part {index + 1}</span>
                                         {chunk.speed > 0 && (
-                                            <span className="chunk-stats ms-auto badge bg-light text-dark">
+                                            <span className="chunk-stats badge bg-light text-dark">
+                                                <i className="fas fa-bolt me-1"></i>
                                                 {chunk.speed.toFixed(2)} MB/s
                                             </span>
                                         )}
@@ -570,7 +591,7 @@ const Admin = () => {
                     </div>
                 </div>
             </div>
-
+            
             {/* Success Modal */}
             <div className="modal fade" 
                 id="successModal" 
