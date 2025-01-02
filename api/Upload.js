@@ -125,17 +125,16 @@ module.exports = async (req, res) => {
         const { title, author, year, topic, keywords, summary } = req.body;
         const compressedPdfBuffer = await compressPDF(req.file.buffer);
 
-        // Upload PDF and get file info including thumbnail
         const uploadResult = await uploadToDrive(compressedPdfBuffer, `${uuidv4()}.pdf`, 'application/pdf');
 
         client = await pool.connect();
 
         const result = await client.query(
             `INSERT INTO archive 
-            (title, author, year, topic, keywords, summary, file_id, thumbnail_id) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+            (title, author, year, topic, keywords, summary, file_id) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7) 
             RETURNING id`,
-            [title, author, year, topic, keywords, summary, uploadResult.fileId, uploadResult.fileId]
+            [title, author, year, topic, keywords, summary, uploadResult.fileId]
         );
 
         return res.status(200).json({

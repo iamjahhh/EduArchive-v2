@@ -57,8 +57,7 @@ module.exports = async (req, res) => {
                 summary,
                 upload_date,
                 downloads,
-                file_id,
-                thumbnail_id
+                file_id
             FROM archive 
             ORDER BY upload_date DESC`
         );
@@ -66,7 +65,7 @@ module.exports = async (req, res) => {
         const files = await Promise.all(result.rows.map(async file => ({
             ...file,
             fileUrl: await getDriveFileUrl(file.file_id, false),
-            thumbnailUrl: await getDriveFileUrl(file.thumbnail_id, true)
+            thumbnailUrl: `https://drive.google.com/thumbnail?id=${file.file_id}&sz=w200`
         })));
 
         return res.status(200).json({
