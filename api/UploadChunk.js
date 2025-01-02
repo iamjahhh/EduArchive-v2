@@ -29,14 +29,12 @@ const drive = google.drive({
     auth: oauth2Client
 });
 
-// Modify the session management
-const SESSION_TIMEOUT = 30 * 60 * 1000;
-const uploadSessions = new Map();
+// In-memory storage for upload sessions
+const uploadSessions = {};
 
 const uploadChunk = async (req, res) => {
     let client;
     try {
-        // Handle multer upload first
         await new Promise((resolve, reject) => {
             upload(req, res, (err) => {
                 if (err) reject(err);
@@ -44,179 +42,141 @@ const uploadChunk = async (req, res) => {
             });
         });
 
-        // Validate request body and file
-        if (!req.body || !req.file || !req.file.buffer) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Invalid request data' 
-            });
+        if (!req.file || !req.file.buffer) {
+            return res.status(400).json({ success: false, message: 'No file chunk provided' });
         }
 
         const { chunkIndex, totalChunks, fileName, sessionId } = req.body;
+        const chunk = req.file.buffer;
+        const chunkSize = chunk.length;
 
-        // Validate required fields
-        if (!sessionId || !chunkIndex || !totalChunks) {
-            return res.status(400).json({
-                success: false,
-                message: 'Missing required fields'
-            });
-        }
-
-        // Initialize session for first chunk
         if (chunkIndex === '0') {
-            try {
-                const uniqueFileName = `${uuidv4()}.pdf`;
-                const fileMetadata = {
-                    name: uniqueFileName,
-                    parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
-                };
+            const uniqueFileName = `${uuidv4()}.pdf`;
+            const fileMetadata = {
+                name: uniqueFileName,
+                parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
+            };
 
-                // Create empty file without media content first
-                const response = await drive.files.create({
-                    requestBody: fileMetadata,
-                    fields: 'id'
-                });
+            // Create a readable stream from an empty buffer
+            const bufferStream = new stream.PassThrough();
+            bufferStream.end(Buffer.from([]));
 
-                uploadSessions.set(sessionId, {
-                    fileId: response.data.id,
-                    buffer: Buffer.alloc(0),
-                    totalSize: parseInt(totalChunks),
-                    receivedChunks: new Set(),
-                    originalFileName: fileName,
-                    uniqueFileName: uniqueFileName,
-                    lastAccessed: Date.now()
-                });
+            const response = await drive.files.create({
+                requestBody: fileMetadata,
+                media: {
+                    mimeType: 'application/pdf',
+                    body: bufferStream
+                },
+                fields: 'id'
+            });
 
-                console.log(`Session ${sessionId} initialized with file ID: ${response.data.id}`);
-            } catch (error) {
-                console.error('Session initialization error:', error);
-                throw error;
-            }
+            uploadSessions[sessionId] = {
+                fileId: response.data.id,
+                buffer: Buffer.alloc(0),
+                totalSize: parseInt(totalChunks) * chunkSize,
+                receivedChunks: new Set(),
+                originalFileName: fileName,
+                uniqueFileName: uniqueFileName
+            };
         }
 
-        // Get and validate session
-        const session = uploadSessions.get(sessionId);
+        const session = uploadSessions[sessionId];
         if (!session) {
-            console.error(`Session ${sessionId} not found. Active sessions:`, uploadSessions.keys());
-            return res.status(400).json({
-                success: false,
-                message: 'Upload session not found or expired'
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Upload session not found' 
             });
         }
 
-        // Update session timestamp
-        session.lastAccessed = Date.now();
-
-        // Process chunk
+        // Add chunk to session buffer
         const chunkIndexNum = parseInt(chunkIndex);
         if (!session.receivedChunks.has(chunkIndexNum)) {
-            try {
-                session.buffer = Buffer.concat([session.buffer, req.file.buffer]);
-                session.receivedChunks.add(chunkIndexNum);
-                uploadSessions.set(sessionId, session); // Update session in Map
-            } catch (error) {
-                console.error('Chunk processing error:', error);
-                throw new Error('Failed to process chunk');
-            }
+            session.buffer = Buffer.concat([
+                session.buffer,
+                chunk
+            ]);
+            session.receivedChunks.add(chunkIndexNum);
         }
 
-        // Handle final chunk
+        // Check if this is the last chunk
         if (session.receivedChunks.size === parseInt(totalChunks)) {
-            try {
-                // Create a readable stream from the complete buffer
-                const bufferStream = new stream.PassThrough();
-                bufferStream.end(session.buffer);
+            // Create a readable stream from the complete buffer
+            const bufferStream = new stream.PassThrough();
+            bufferStream.end(session.buffer);
 
-                // Update file with actual content
-                await drive.files.update({
-                    fileId: session.fileId,
-                    media: {
-                        mimeType: 'application/pdf',
-                        body: bufferStream
-                    },
-                    fields: 'id'
-                });
+            // Upload complete file
+            await drive.files.update({
+                fileId: session.fileId,
+                media: {
+                    mimeType: 'application/pdf',
+                    body: bufferStream
+                },
+                fields: 'id'
+            });
 
-                // Set file permissions and enable thumbnail generation
-                await drive.permissions.create({
-                    fileId: session.fileId,
-                    requestBody: {
-                        role: 'reader',
-                        type: 'anyone'
-                    }
-                });
+            // Set file permissions and enable thumbnail generation
+            await drive.permissions.create({
+                fileId: session.fileId,
+                requestBody: {
+                    role: 'reader',
+                    type: 'anyone'
+                }
+            });
 
-                // Force thumbnail generation
-                await drive.files.get({
-                    fileId: session.fileId,
-                    fields: 'thumbnailLink',
-                    supportsAllDrives: true
-                });
+            // Force thumbnail generation
+            await drive.files.get({
+                fileId: session.fileId,
+                fields: 'thumbnailLink',
+                supportsAllDrives: true
+            });
 
-                // Save metadata to database
-                const { title, author, year, topic, keywords, summary } = req.body;
-                
-                client = await pool.connect();
-                const result = await client.query(
-                    `INSERT INTO archive 
-                    (title, author, year, topic, keywords, summary, file_id, original_filename, status) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-                    RETURNING id`,
-                    [title, author, year, topic, keywords, summary, session.fileId, 
-                     session.originalFileName, 'processing']
-                );
+            // Save metadata to database
+            const { title, author, year, topic, keywords, summary } = req.body;
+            
+            client = await pool.connect();
+            const result = await client.query(
+                `INSERT INTO archive 
+                (title, author, year, topic, keywords, summary, file_id, original_filename, status) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+                RETURNING id`,
+                [title, author, year, topic, keywords, summary, session.fileId, 
+                 session.originalFileName, 'processing']
+            );
 
-                // Clean up session after successful upload
-                uploadSessions.delete(sessionId);
-                console.log(`Session ${sessionId} completed and cleaned up`);
+            // Clean up session
+            delete uploadSessions[sessionId];
 
-                return res.json({
-                    success: true,
-                    message: 'File uploaded successfully',
-                    fileId: session.fileId,
-                    recordId: result.rows[0].id,
-                    thumbnailPending: true
-                });
-            } catch (error) {
-                console.error('Final chunk processing error:', error);
-                throw error;
-            }
+            return res.json({
+                success: true,
+                message: 'File uploaded successfully',
+                fileId: session.fileId,
+                recordId: result.rows[0].id,
+                thumbnailPending: true
+            });
         }
 
-        // Return progress
+        // Return detailed progress for non-final chunks
         return res.json({
             success: true,
             message: 'Chunk received',
             progress: (session.receivedChunks.size / parseInt(totalChunks)) * 100,
-            chunkIndex: chunkIndexNum,
+            chunkSize: req.file.size,
+            receivedChunks: session.receivedChunks.size,
             totalChunks: parseInt(totalChunks)
         });
 
     } catch (error) {
-        console.error('Upload chunk error:', {
-            error,
-            body: req.body,
-            sessionId: req.body?.sessionId
-        });
-        return res.status(500).json({
-            success: false,
-            message: error.message || 'Upload failed',
-            error: error.toString()
+        console.error('Chunk upload error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Chunk upload failed', 
+            error: error.message 
         });
     } finally {
-        if (client) client.release();
-    }
-};
-
-// Clean up stale sessions periodically
-setInterval(() => {
-    const now = Date.now();
-    for (const [sessionId, session] of uploadSessions.entries()) {
-        if (now - session.lastAccessed > SESSION_TIMEOUT) {
-            uploadSessions.delete(sessionId);
-            console.log(`Session ${sessionId} expired and cleaned up`);
+        if (client) {
+            client.release();
         }
     }
-}, 60000);
+};
 
 module.exports = uploadChunk;
