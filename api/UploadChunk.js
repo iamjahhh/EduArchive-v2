@@ -1,5 +1,6 @@
 const { google } = require('googleapis');
 const multer = require('multer');
+const stream = require('stream');
 
 const upload = multer().single('chunk');
 
@@ -45,19 +46,21 @@ const uploadChunk = async (req, res) => {
                 parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
             };
 
-            const res = await drive.files.create({
-                resource: fileMetadata,
+            // Create a readable stream from an empty buffer
+            const bufferStream = new stream.PassThrough();
+            bufferStream.end(Buffer.from([]));
+
+            const response = await drive.files.create({
+                requestBody: fileMetadata,
                 media: {
                     mimeType: 'application/pdf',
-                    body: Buffer.from([]) // Empty buffer for initialization
+                    body: bufferStream
                 },
-                fields: 'id',
-                supportsAllDrives: true,
-                uploadType: 'resumable'
+                fields: 'id'
             });
 
             uploadSessions[sessionId] = {
-                fileId: res.data.id,
+                fileId: response.data.id,
                 buffer: Buffer.alloc(0),
                 totalSize: parseInt(totalChunks) * chunkSize,
                 receivedChunks: new Set()
@@ -84,11 +87,16 @@ const uploadChunk = async (req, res) => {
 
         // Check if this is the last chunk
         if (session.receivedChunks.size === parseInt(totalChunks)) {
+            // Create a readable stream from the complete buffer
+            const bufferStream = new stream.PassThrough();
+            bufferStream.end(session.buffer);
+
             // Upload complete file
             await drive.files.update({
                 fileId: session.fileId,
                 media: {
-                    body: session.buffer
+                    mimeType: 'application/pdf',
+                    body: bufferStream
                 },
                 fields: 'id'
             });
