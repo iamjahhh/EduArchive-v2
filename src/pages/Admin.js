@@ -499,7 +499,7 @@ const Admin = () => {
             </div>
 
             <div className="modal fade" id="uploadProgressModal" tabIndex="-1" aria-hidden="true">
-                <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-dialog modal-lg modal-dialog-centered">
                     <div className="modal-content shadow-sm border-0">
                         {/* Modal Header */}
                         <div className="modal-header bg-primary text-white">
@@ -514,20 +514,20 @@ const Admin = () => {
                                 <div className="upload-stats mb-4">
                                     <div className="row text-center">
                                         <div className="col-4">
-                                            <div className="stat-label text-muted small">Total Size</div>
-                                            <div className="stat-value fw-bold">
+                                            <div className="stat-label text-muted">Total Size</div>
+                                            <div className="stat-value h6 fw-bold mt-1">
                                                 {(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB
                                             </div>
                                         </div>
                                         <div className="col-4">
-                                            <div className="stat-label text-muted small">Uploaded</div>
-                                            <div className="stat-value fw-bold">
+                                            <div className="stat-label text-muted">Uploaded</div>
+                                            <div className="stat-value h6 fw-bold mt-1">
                                                 {(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB
                                             </div>
                                         </div>
                                         <div className="col-4">
-                                            <div className="stat-label text-muted small">Elapsed Time</div>
-                                            <div className="stat-value fw-bold">
+                                            <div className="stat-label text-muted">Elapsed Time</div>
+                                            <div className="stat-value h6 fw-bold mt-1">
                                                 {(elapsedTime / 1000).toFixed(1)}s
                                             </div>
                                         </div>
@@ -563,7 +563,14 @@ const Admin = () => {
                                                             ? 'bg-warning'
                                                             : 'bg-danger'
                                                     }`}
-                                                style={{ width: "32px", height: "32px", borderRadius: "50%", display: "flex", justifyContent: "center", alignItems: "center" }}
+                                                style={{
+                                                    width: "32px",
+                                                    height: "32px",
+                                                    borderRadius: "50%",
+                                                    display: "flex",
+                                                    justifyContent: "center",
+                                                    alignItems: "center",
+                                                }}
                                             >
                                                 {chunk.status === 'completed' && <i className="fas fa-check"></i>}
                                                 {chunk.status === 'pending' && <i className="fas fa-clock"></i>}
@@ -589,7 +596,6 @@ const Admin = () => {
                     </div>
                 </div>
             </div>
-
 
             {/* Success Modal */}
             <div className="modal fade"
