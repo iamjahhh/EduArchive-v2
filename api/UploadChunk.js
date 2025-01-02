@@ -31,6 +31,21 @@ const drive = google.drive({
 
 // In-memory storage for upload sessions
 const uploadSessions = {};
+const sessionTimestamps = {};
+
+// Add session timeout handling
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+// Cleanup old sessions periodically
+setInterval(() => {
+    const now = Date.now();
+    Object.keys(sessionTimestamps).forEach(sessionId => {
+        if (now - sessionTimestamps[sessionId] > SESSION_TIMEOUT) {
+            delete uploadSessions[sessionId];
+            delete sessionTimestamps[sessionId];
+        }
+    });
+}, 60000); // Check every minute
 
 const uploadChunk = async (req, res) => {
     let client;
@@ -47,6 +62,10 @@ const uploadChunk = async (req, res) => {
         }
 
         const { chunkIndex, totalChunks, fileName, sessionId } = req.body;
+        
+        // Update session timestamp
+        sessionTimestamps[sessionId] = Date.now();
+
         const chunk = req.file.buffer;
         const chunkSize = chunk.length;
 
@@ -145,6 +164,7 @@ const uploadChunk = async (req, res) => {
 
             // Clean up session
             delete uploadSessions[sessionId];
+            delete sessionTimestamps[sessionId];
 
             return res.json({
                 success: true,

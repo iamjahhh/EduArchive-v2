@@ -122,10 +122,10 @@ const Admin = () => {
                 setUploadStats(prev => ({
                     ...prev,
                     uploadedSize: prev.uploadedSize + chunk.size,
-                    chunks: prev.chunks.map((c, i) => 
-                        i === chunkIndex ? 
-                        { status: 'completed', speed: chunkSpeed, time: chunkTime } : 
-                        c
+                    chunks: prev.chunks.map((c, i) =>
+                        i === chunkIndex ?
+                            { status: 'completed', speed: chunkSpeed, time: chunkTime } :
+                            c
                     )
                 }));
 
@@ -136,7 +136,7 @@ const Admin = () => {
         } catch (error) {
             setUploadStats(prev => ({
                 ...prev,
-                chunks: prev.chunks.map(c => 
+                chunks: prev.chunks.map(c =>
                     c.status === 'pending' ? { ...c, status: 'failed' } : c
                 )
             }));
@@ -146,7 +146,20 @@ const Admin = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Close upload modal immediately
+        const modalElement = document.getElementById('uploadModal');
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide();
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '';
+        }
+
         setIsUploading(true);
+        setShowUploadProgress(true);
 
         try {
             // Get form details
@@ -161,10 +174,10 @@ const Admin = () => {
             };
 
             const fileId = await uploadFileInChunks(fileUploaded, formDetails);
-            
+
             if (fileId) {
                 await fetchFiles();
-                
+
                 // Close modal and clean up
                 const modalElement = document.getElementById('uploadModal');
                 const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -182,7 +195,10 @@ const Admin = () => {
             }
         } catch (error) {
             console.error('Error uploading file:', error);
-            alert(`Error uploading file: ${error.message}`);
+            setUploadStats(prev => ({
+                ...prev,
+                error: error.message
+            }));
         } finally {
             setIsUploading(false);
         }
@@ -416,46 +432,68 @@ const Admin = () => {
                                     onClick={resetForm}
                                 >
                                     Cancel
-                                </button>                            </form>                        </div>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Upload Progress Modal */}
-            <div className={`modal fade ${showUploadProgress ? 'show' : ''}`} 
-                id="uploadProgressModal" 
-                tabIndex="-1" 
+            {/* Modern Upload Progress Modal */}
+            <div className={`modal fade upload-progress-modal ${showUploadProgress ? 'show' : ''}`}
+                id="uploadProgressModal"
+                tabIndex="-1"
                 style={{ display: showUploadProgress ? 'block' : 'none' }}>
                 <div className="modal-dialog modal-lg">
-                    <div className="modal-content">
-                        <div className="modal-header">
-                            <h5 className="modal-title">Upload Progress</h5>
+                    <div className="modal-content upload-progress-content">
+                        <div className="modal-header upload-progress-header">
+                            <h5 className="modal-title">Uploading {fileUploaded?.name}</h5>
                         </div>
                         <div className="modal-body">
                             <div className="upload-stats">
-                                <div>Total Size: {(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB</div>
-                                <div>Uploaded: {(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB</div>
-                                <div>Progress: {((uploadStats.uploadedSize / uploadStats.totalSize) * 100).toFixed(1)}%</div>
-                                <div>Elapsed Time: {((Date.now() - uploadStats.startTime) / 1000).toFixed(1)}s</div>
+                                <div className="stats-grid">
+                                    <div>
+                                        <div className="stat-label">Total Size</div>
+                                        <div className="stat-value">{(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB</div>
+                                    </div>
+                                    <div>
+                                        <div className="stat-label">Uploaded</div>
+                                        <div className="stat-value">{(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB</div>
+                                    </div>
+                                    <div>
+                                        <div className="stat-label">Elapsed Time</div>
+                                        <div className="stat-value">{((Date.now() - uploadStats.startTime) / 1000).toFixed(1)}s</div>
+                                    </div>
+                                </div>
+                                <div className="progress-bar-container">
+                                    <div 
+                                        className="progress-bar" 
+                                        style={{ width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%` }}
+                                    />
+                                </div>
                             </div>
                             <div className="chunks-list">
                                 {uploadStats.chunks.map((chunk, index) => (
                                     <div key={index} className="chunk-item">
-                                        <span className="chunk-status">
+                                        <span className={`chunk-status ${chunk.status}`}>
                                             {chunk.status === 'completed' && '✓'}
                                             {chunk.status === 'pending' && '⏳'}
-                                            {chunk.status === 'failed' && '❌'}
+                                            {chunk.status === 'failed' && '✕'}
                                         </span>
                                         <span>Chunk {index + 1}</span>
                                         {chunk.speed > 0 && (
                                             <span className="chunk-stats">
                                                 {chunk.speed.toFixed(2)} MB/s
-                                                ({(chunk.time / 1000).toFixed(2)}s)
                                             </span>
                                         )}
                                     </div>
                                 ))}
                             </div>
+                            {uploadStats.error && (
+                                <div className="error-message">
+                                    Error: {uploadStats.error}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
