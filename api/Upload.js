@@ -5,7 +5,6 @@ const { google } = require('googleapis');
 const { v4: uuidv4 } = require('uuid');
 const stream = require('stream');
 const multer = require('multer');
-const axios = require('axios');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -72,31 +71,29 @@ async function uploadToDrive(buffer, name, mimeType) {
             fields: 'id, webContentLink, webViewLink, thumbnailLink'
         });
 
-        const fileId = file.data.id;
-        const uploadUrl = file.config.url;
+        // Set public permissions
+        await drive.permissions.create({
+            fileId: file.data.id,
+            requestBody: {
+                role: 'reader',
+                type: 'anyone'
+            }
+        });
 
-        let start = 0;
-        const chunkSize = 4 * 1024 * 1024; // 4MB
-
-        while (start < buffer.length) {
-            const end = Math.min(start + chunkSize, buffer.length);
-            const chunk = buffer.slice(start, end);
-
-            await axios.put(uploadUrl, chunk, {
-                headers: {
-                    'Content-Range': `bytes ${start}-${end - 1}/${buffer.length}`,
-                    'Content-Type': mimeType
-                }
-            });
-
-            start = end;
-        }
+        // Update sharing settings
+        await drive.files.update({
+            fileId: file.data.id,
+            requestBody: {
+                copyRequiresWriterPermission: false,
+                writersCanShare: true
+            }
+        });
 
         return {
-            fileId,
+            fileId: file.data.id,
             webContentLink: file.data.webContentLink.replace('&export=download', ''),
             webViewLink: file.data.webViewLink,
-            thumbnailLink: `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`
+            thumbnailLink: `https://drive.google.com/thumbnail?id=${file.data.id}&sz=w200`
         };
     } catch (error) {
         console.error('Drive upload error:', error);

@@ -55,7 +55,57 @@ const Admin = () => {
         }
     };
 
+    const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
+
+    const uploadFileInChunks = async (file) => {
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        let uploadUrl;
+
+        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+            const start = chunkIndex * CHUNK_SIZE;
+            const end = Math.min(file.size, start + CHUNK_SIZE);
+            const chunk = file.slice(start, end);
+
+            const formData = new FormData();
+            formData.append('chunk', chunk);
+            formData.append('chunkIndex', chunkIndex);
+            formData.append('totalChunks', totalChunks);
+            formData.append('fileName', file.name);
+
+            const response = await fetch('/api/UploadChunk', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+            if (data.uploadUrl) uploadUrl = data.uploadUrl;
+
+            if (!response.ok) {
+                throw new Error(data?.message || 'Chunk upload failed');
+            }
+        }
+
+        return uploadUrl;
+    };
+
     const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsUploading(true);
+
+        try {
+            const uploadUrl = await uploadFileInChunks(fileUploaded);
+            if (uploadUrl) {
+                alert('File uploaded successfully!');
+            }
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            alert(`Error uploading file: ${error.message}`);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleSubmitOld = async (e) => {
         e.preventDefault();
         setIsUploading(true);
 
