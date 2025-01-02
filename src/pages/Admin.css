@@ -363,16 +363,3 @@ button:disabled {
     color: #666;
     font-size: 0.9em;
 }
-
-@keyframes growWidth {
-    from {
-        width: 0;
-    }
-    to {
-        width: 100%; /* Static width for keyframes */
-    }
-}
-
-.progress-bar-animated {
-    animation: growWidth 1s ease-out forwards;
-}

@@ -378,7 +378,8 @@ const Admin = () => {
                     ))}
                 </div>
             </div>
-
+            
+            {/*Delete Modal*/}
             <div className="modal fade" id="deleteModal" tabIndex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content">
@@ -396,7 +397,7 @@ const Admin = () => {
                                             alt={modalFile.title}
                                             className="thumbnail"
                                         />
-                                        <p id="editTitleDelete" style={{ marginTop: "5px", marginBottom: "10px", fontWeight: "bold" }}>
+                                        <p id="editTitleDelete" style={{ marginTop: "5px", fontWeight: "bold" }}>
                                             {modalFile.title} ({modalFile.year})
                                         </p>
                                         <p>
@@ -414,7 +415,8 @@ const Admin = () => {
                     </div>
                 </div>
             </div>
-
+            
+            {/*Upload Modal*/}
             <div className="modal fade" id="uploadModal" tabIndex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
                 <div className="modal-dialog">
                     <div className="modal-content">
@@ -512,20 +514,20 @@ const Admin = () => {
                             <div className="upload-progress-container">
                                 {/* Upload Stats */}
                                 <div className="upload-stats mb-4">
-                                    <div className="row text-center">
-                                        <div className="col-4">
+                                    <div className="row text-center g-3">
+                                        <div className="col-12 col-md-4">
                                             <div className="stat-label text-muted">Total Size</div>
                                             <div className="stat-value h6 fw-bold mt-1">
                                                 {(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB
                                             </div>
                                         </div>
-                                        <div className="col-4">
+                                        <div className="col-12 col-md-4">
                                             <div className="stat-label text-muted">Uploaded</div>
                                             <div className="stat-value h6 fw-bold mt-1">
                                                 {(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB
                                             </div>
                                         </div>
-                                        <div className="col-4">
+                                        <div className="col-12 col-md-4">
                                             <div className="stat-label text-muted">Elapsed Time</div>
                                             <div className="stat-value h6 fw-bold mt-1">
                                                 {(elapsedTime / 1000).toFixed(1)}s
@@ -534,46 +536,43 @@ const Admin = () => {
                                     </div>
                                 </div>
 
-                                <div className="upload-stats mb-4">
-                                    <div className="progress-container mb-4">
+                                {/* Progress Bar */}
+                                <div className="progress-container mb-4">
+                                    <div
+                                        className="progress"
+                                        style={{
+                                            height: "16px",
+                                            borderRadius: "8px",
+                                            backgroundColor: "#f1f1f1",
+                                            overflow: "hidden",
+                                            position: "relative",
+                                        }}
+                                    >
                                         <div
-                                            className="progress"
+                                            className="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+                                            role="progressbar"
                                             style={{
-                                                height: "12px",
-                                                borderRadius: "6px",
-                                                backgroundColor: "#e9ecef",
-                                                overflow: "hidden",
-                                                position: "relative",
+                                                width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%`,
+                                                transition: 'width 0.3s ease-out',
+                                            }}
+                                            aria-valuenow={(uploadStats.uploadedSize / uploadStats.totalSize) * 100}
+                                            aria-valuemin="0"
+                                            aria-valuemax="100"
+                                        ></div>
+
+                                        <span
+                                            style={{
+                                                position: "absolute",
+                                                top: "50%",
+                                                left: "50%",
+                                                transform: "translate(-50%, -50%)",
+                                                fontWeight: "bold",
+                                                color: "#000",
+                                                textShadow: "1px 1px 2px rgba(255,255,255,0.8)",
                                             }}
                                         >
-                                            {/* Animated Progress Bar */}
-                                            <div
-                                                className="progress-bar bg-success progress-bar-animated"
-                                                role="progressbar"
-                                                style={{
-                                                    width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%`, // Dynamically set width
-                                                    boxShadow: "0 0 10px rgba(72, 182, 73, 0.7)", // Glowing effect
-                                                }}
-                                                aria-valuenow={(uploadStats.uploadedSize / uploadStats.totalSize) * 100}
-                                                aria-valuemin="0"
-                                                aria-valuemax="100"
-                                            ></div>
-
-                                            {/* Percentage Text */}
-                                            <span
-                                                style={{
-                                                    position: "absolute",
-                                                    top: "50%",
-                                                    left: "50%",
-                                                    transform: "translate(-50%, -50%)",
-                                                    fontWeight: "bold",
-                                                    color: "white",
-                                                    textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
-                                                }}
-                                            >
-                                                {`${((uploadStats.uploadedSize / uploadStats.totalSize) * 100).toFixed(1)}%`}
-                                            </span>
-                                        </div>
+                                            {`${((uploadStats.uploadedSize / uploadStats.totalSize) * 100).toFixed(1)}%`}
+                                        </span>
                                     </div>
                                 </div>
 
@@ -622,6 +621,7 @@ const Admin = () => {
                     </div>
                 </div>
             </div>
+
 
             {/* Success Modal */}
             <div className="modal fade"
