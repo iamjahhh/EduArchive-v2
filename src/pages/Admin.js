@@ -172,7 +172,7 @@ const Admin = () => {
             </div>
 
             <div className="modal fade" id="deleteModal" tabIndex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-                <div className="modal-dialog">
+                <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content">
                         <div className="modal-header">
                             <h5 className="modal-title" id="deleteModalLabel">Delete Resource</h5>
@@ -189,13 +189,18 @@ const Admin = () => {
                                             className="thumbnail"
                                         />
                                         <p id="editTitleDelete" style={{ marginTop: "5px", marginBottom: "10px", fontWeight: "bold" }}>
-                                            {modalFile.title}
+                                            {modalFile.title} ({modalFile.year})
                                         </p>
+                                        <p style={{ marginTop: "5px", marginBottom: "10px" }}>
+                                            Are you sure you want to delete this file? This action cannot be undone.
+                                        </p>
+                                        <p>
+                                            by <strong>{modalFile.author}</strong>
+                                        </p>
+                                        <button id="confirmDeleteBtn" className="btn btn-danger">Delete</button>
                                     </>
                                 )}
-                                <p style={{ marginTop: "5px", marginBottom: "10px" }}>Are you sure you want to delete this file? This action cannot be undone.</p>
-                                <button id="confirmDeleteBtn" className="red-btn">Delete</button>
-                                <button type="button" className="btn btn-secondary ml-3">Cancel</button>
+                                <button type="button" style={{ marginLeft: "1rem" }} className="btn btn-secondary">Cancel</button>
                             </div>
                         </div>
                     </div>
