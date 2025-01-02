@@ -40,17 +40,23 @@ const uploadChunk = async (req, res) => {
                 name: fileName,
                 parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID],
             };
-
+        
             const response = await drive.files.create({
                 requestBody: fileMetadata,
                 media: { mimeType: 'application/pdf' },
                 fields: 'id',
                 uploadType: 'resumable',
             });
-
-            req.session.uploadUrl = response.headers.location;
-            req.session.fileId = response.data.id;
+        
+            const uploadUrl = response.headers.location;
+        
+            return res.json({ 
+                success: true, 
+                uploadUrl, 
+                fileId: response.data.id 
+            });
         }
+        
 
         // Upload the current chunk
         const uploadUrl = req.session.uploadUrl;
