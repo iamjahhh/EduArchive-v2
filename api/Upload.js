@@ -53,8 +53,9 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfUrl) {
     try {
+        // Make API request to PDFLayer
         const response = await axios({
-            method: 'post',
+            method: 'get',
             url: 'https://api.pdflayer.com/api/convert',
             params: {
                 access_key: process.env.PDFLAYER_API_KEY,
@@ -65,12 +66,14 @@ async function generateThumbnail(pdfUrl) {
                 height: 280,
                 scale: '2.0',
                 background_color: 'white'
-            }
+            },
+            responseType: 'arraybuffer'  // Important: get response as buffer
         });
 
-        return Buffer.from(response.data, 'base64');
+        // Response is already a buffer when using responseType: 'arraybuffer'
+        return response.data;
     } catch (error) {
-        console.error('Thumbnail generation error:', error);
+        console.error('Thumbnail generation error:', error.response?.data || error.message);
         return null;
     }
 }
@@ -119,9 +122,12 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             }
         });
 
+        // Immediately get a direct link that doesn't require authentication
+        const publicUrl = file.data.webContentLink.replace('&export=download', '');
+
         return {
             fileId: file.data.id,
-            webContentLink: file.data.webContentLink,
+            webContentLink: publicUrl,
             webViewLink: file.data.webViewLink
         };
     } catch (error) {
@@ -156,9 +162,15 @@ module.exports = async (req, res) => {
         // First upload the PDF
         const pdfUpload = await uploadToDrive(compressedPdfBuffer, `${uuidv4()}.pdf`, 'application/pdf', true);
         
-        // Generate thumbnail using the uploaded PDF's URL
+        console.log('PDF uploaded, URL:', pdfUpload.webContentLink);
+        
+        // Generate thumbnail using the public URL
         const thumbnailBuffer = await generateThumbnail(pdfUpload.webContentLink);
         
+        if (!thumbnailBuffer) {
+            throw new Error('Failed to generate thumbnail');
+        }
+
         // Upload the thumbnail
         const thumbnailUpload = await uploadToDrive(thumbnailBuffer, `${uuidv4()}_thumbnail.png`, 'image/png', false);
 
