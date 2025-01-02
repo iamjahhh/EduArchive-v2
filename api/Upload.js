@@ -5,9 +5,7 @@ const { google } = require('googleapis');
 const { v4: uuidv4 } = require('uuid');
 const stream = require('stream');
 const multer = require('multer');
-const axios = require('axios');
-const chrome = require('chrome-aws-lambda');
-const puppeteer = require('puppeteer-core');
+const nodeHtmlToImage = require('node-html-to-image');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -55,38 +53,42 @@ async function compressPDF(buffer) {
 
 async function generateThumbnail(pdfUrl) {
     try {
-        const browser = await puppeteer.launch({
-            args: chrome.args,
-            executablePath: await chrome.executablePath,
-            headless: true
-        });
+        const html = `
+            <html>
+                <head>
+                    <style>
+                        body {
+                            width: 200px;
+                            height: 280px;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            margin: 0;
+                            background: white;
+                        }
+                        iframe {
+                            width: 100%;
+                            height: 100%;
+                            border: none;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <iframe src="${pdfUrl}#page=1"></iframe>
+                </body>
+            </html>
+        `;
 
-        const page = await browser.newPage();
-        await page.setViewport({ width: 200, height: 280 });
-        
-        // Navigate to the PDF URL
-        await page.goto(`https://drive.google.com/viewerng/viewer?embedded=true&url=${encodeURIComponent(pdfUrl)}`, {
-            waitUntil: 'networkidle0',
-            timeout: 30000
-        });
-
-        // Wait for the PDF to render
-        await page.waitForSelector('#page1', { timeout: 30000 });
-
-        // Take screenshot
-        const screenshot = await page.screenshot({
+        const image = await nodeHtmlToImage({
+            html: html,
+            quality: 100,
             type: 'png',
-            quality: 90,
-            clip: {
-                x: 0,
-                y: 0,
-                width: 200,
-                height: 280
+            puppeteerArgs: {
+                args: ['--no-sandbox']
             }
         });
 
-        await browser.close();
-        return screenshot;
+        return image;
     } catch (error) {
         console.error('Thumbnail generation error:', error);
         return null;
