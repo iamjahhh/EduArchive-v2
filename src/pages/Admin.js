@@ -60,31 +60,46 @@ const Admin = () => {
     const uploadFileInChunks = async (file) => {
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         const sessionId = uuidv4();
+        let uploadedChunks = 0;
 
-        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-            const start = chunkIndex * CHUNK_SIZE;
-            const end = Math.min(file.size, start + CHUNK_SIZE);
-            const chunk = file.slice(start, end);
+        try {
+            for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                const start = chunkIndex * CHUNK_SIZE;
+                const end = Math.min(file.size, start + CHUNK_SIZE);
+                const chunk = file.slice(start, end);
 
-            const formData = new FormData();
-            formData.append('chunk', chunk);
-            formData.append('chunkIndex', chunkIndex);
-            formData.append('totalChunks', totalChunks);
-            formData.append('fileName', file.name);
-            formData.append('sessionId', sessionId);
+                const formData = new FormData();
+                formData.append('chunk', chunk);
+                formData.append('chunkIndex', chunkIndex.toString());
+                formData.append('totalChunks', totalChunks.toString());
+                formData.append('fileName', file.name);
+                formData.append('sessionId', sessionId);
 
-            const response = await fetch('/api/UploadChunk', {
-                method: 'POST',
-                body: formData,
-            });
+                const response = await fetch('/api/UploadChunk', {
+                    method: 'POST',
+                    body: formData,
+                });
 
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data?.message || 'Chunk upload failed');
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Upload failed');
+                }
+
+                const result = await response.json();
+                uploadedChunks++;
+
+                // Update progress if needed
+                const progress = (uploadedChunks / totalChunks) * 100;
+                console.log(`Upload progress: ${progress.toFixed(2)}%`);
+
+                if (result.fileId) {
+                    return result.fileId;
+                }
             }
+        } catch (error) {
+            console.error('Upload error:', error);
+            throw error;
         }
-
-        return sessionId;
     };
 
     const handleSubmit = async (e) => {

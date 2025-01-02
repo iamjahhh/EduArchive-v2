@@ -1,6 +1,5 @@
 const { google } = require('googleapis');
 const multer = require('multer');
-const axios = require('axios');
 
 const upload = multer().single('chunk');
 
@@ -19,9 +18,7 @@ const drive = google.drive({
     auth: oauth2Client
 });
 
-const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
-
-// In-memory storage for upload URLs and file IDs
+// In-memory storage for upload sessions
 const uploadSessions = {};
 
 const uploadChunk = async (req, res) => {
@@ -39,63 +36,96 @@ const uploadChunk = async (req, res) => {
 
         const { chunkIndex, totalChunks, fileName, sessionId } = req.body;
         const chunk = req.file.buffer;
+        const chunkSize = chunk.length;
 
         if (chunkIndex === '0') {
-            // Start a resumable upload session
+            // Initialize the upload session
             const fileMetadata = {
                 name: fileName,
-                parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID],
+                parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
             };
 
-            const response = await drive.files.create({
-                requestBody: fileMetadata,
-                media: { mimeType: 'application/pdf' },
+            const res = await drive.files.create({
+                resource: fileMetadata,
+                media: {
+                    mimeType: 'application/pdf',
+                    body: Buffer.from([]) // Empty buffer for initialization
+                },
                 fields: 'id',
-                uploadType: 'resumable',
+                supportsAllDrives: true,
+                uploadType: 'resumable'
             });
 
-            const uploadUrl = response.headers.location;
             uploadSessions[sessionId] = {
-                uploadUrl,
-                fileId: response.data.id
+                fileId: res.data.id,
+                buffer: Buffer.alloc(0),
+                totalSize: parseInt(totalChunks) * chunkSize,
+                receivedChunks: new Set()
             };
-
-            return res.json({
-                success: true,
-                uploadUrl,
-                fileId: response.data.id
-            });
         }
 
         const session = uploadSessions[sessionId];
         if (!session) {
-            return res.status(400).json({ success: false, message: 'Upload session not found' });
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Upload session not found' 
+            });
         }
 
-        const { uploadUrl, fileId } = session;
-        const start = chunkIndex * CHUNK_SIZE;
-        const end = start + chunk.byteLength - 1;
-        const totalSize = totalChunks * CHUNK_SIZE;
+        // Add chunk to session buffer
+        const chunkIndexNum = parseInt(chunkIndex);
+        if (!session.receivedChunks.has(chunkIndexNum)) {
+            session.buffer = Buffer.concat([
+                session.buffer,
+                chunk
+            ]);
+            session.receivedChunks.add(chunkIndexNum);
+        }
 
-        await axios.put(uploadUrl, chunk, {
-            headers: {
-                'Content-Range': `bytes ${start}-${end}/${totalSize}`,
-            },
-        });
+        // Check if this is the last chunk
+        if (session.receivedChunks.size === parseInt(totalChunks)) {
+            // Upload complete file
+            await drive.files.update({
+                fileId: session.fileId,
+                media: {
+                    body: session.buffer
+                },
+                fields: 'id'
+            });
 
-        if (parseInt(chunkIndex) + 1 === parseInt(totalChunks)) {
-            delete uploadSessions[sessionId]; // Clean up the session
-            res.json({
+            // Set file permissions
+            await drive.permissions.create({
+                fileId: session.fileId,
+                requestBody: {
+                    role: 'reader',
+                    type: 'anyone'
+                }
+            });
+
+            // Clean up session
+            delete uploadSessions[sessionId];
+
+            return res.json({
                 success: true,
                 message: 'File uploaded successfully',
-                fileId: fileId,
+                fileId: session.fileId
             });
-        } else {
-            res.json({ success: true });
         }
+
+        // Return progress for non-final chunks
+        return res.json({
+            success: true,
+            message: 'Chunk received',
+            progress: (session.receivedChunks.size / parseInt(totalChunks)) * 100
+        });
+
     } catch (error) {
         console.error('Chunk upload error:', error);
-        res.status(500).json({ success: false, message: 'Chunk upload failed', error: error.message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Chunk upload failed', 
+            error: error.message 
+        });
     }
 };
 
