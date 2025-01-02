@@ -149,7 +149,7 @@ const Admin = () => {
                                     data-bs-target="#editModal"
                                     onClick={setModalFile(file)}
                                 >Edit</button>
-                                
+
                                 <button
                                     type="button"
                                     className="red-btn"
@@ -173,10 +173,21 @@ const Admin = () => {
                         <div className="modal-body">
                             <div className="deleteModal-content">
                                 <span className="close-btn">&times;</span>
-                                <h3 style="margin-top: 10px; margin-bottom: 5px;">Confirm Deletion</h3>
-                                <img id="editThumbnailDelete" className="thumbnail" src=""></img>
-                                <p id="editTitleDelete" style="margin-top: 5px; margin-bottom: 10px; font-weight: bold;"></p>
-                                <p style="margin-top: 5px; margin-bottom: 10px;">Are you sure you want to delete this file? This action cannot be undone.</p>
+                                <h3 style={{ marginTop: "10px", marginBottom: "5px" }}>Confirm Deletion</h3>
+                                {modalFile && (
+                                    <>
+                                        <img
+                                            id="editThumbnailDelete"
+                                            src={modalFile.thumbnailUrl}
+                                            alt={modalFile.title}
+                                            className="thumbnail"
+                                        />
+                                        <p id="editTitleDelete" style={{ marginTop: "5px", marginBottom: "10px", fontWeight: "bold" }}>
+                                            {modalFile.title}
+                                        </p>
+                                    </>
+                                )}
+                                <p style={{ marginTop: "5px", marginBottom: "10px" }}>Are you sure you want to delete this file? This action cannot be undone.</p>
                                 <button id="confirmDeleteBtn" className="red-btn">Delete</button>
                                 <button type="button" className="cancel-btn">Cancel</button>
                             </div>
