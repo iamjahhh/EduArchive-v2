@@ -29,25 +29,34 @@ const drive = google.drive({
     auth: oauth2Client
 });
 
-// In-memory storage for upload sessions
+// Increase session timeout and add better session management
+const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour timeout
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
 const uploadSessions = {};
 const sessionTimestamps = {};
 
-// Add session timeout handling
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-
-// Cleanup old sessions periodically
-setInterval(() => {
-    const now = Date.now();
-    Object.keys(sessionTimestamps).forEach(sessionId => {
-        if (now - sessionTimestamps[sessionId] > SESSION_TIMEOUT) {
-            delete uploadSessions[sessionId];
-            delete sessionTimestamps[sessionId];
+// Add retry mechanism for chunk upload
+const uploadChunkWithRetry = async (req, res, retryCount = 0) => {  // Add res parameter
+    try {
+        // Update session timestamp on every request
+        const { sessionId } = req.body;
+        if (sessionId) {
+            sessionTimestamps[sessionId] = Date.now();
         }
-    });
-}, 60000); // Check every minute
 
-const uploadChunk = async (req, res) => {
+        return await uploadChunk(req, res);  // Pass res to uploadChunk
+    } catch (error) {
+        if (retryCount < MAX_RETRIES && error.message === 'Upload session not found') {
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            return uploadChunkWithRetry(req, res, retryCount + 1);  // Pass res to recursive call
+        }
+        throw error;
+    }
+};
+
+const uploadChunk = async (req, res) => {  // Add res parameter
     let client;
     try {
         await new Promise((resolve, reject) => {
@@ -62,29 +71,24 @@ const uploadChunk = async (req, res) => {
         }
 
         const { chunkIndex, totalChunks, fileName, sessionId } = req.body;
-        
-        // Update session timestamp
-        sessionTimestamps[sessionId] = Date.now();
-
         const chunk = req.file.buffer;
         const chunkSize = chunk.length;
 
+        // Initialize session with more robust error handling
         if (chunkIndex === '0') {
+            if (uploadSessions[sessionId]) {
+                // Clean up existing session if it exists
+                delete uploadSessions[sessionId];
+                delete sessionTimestamps[sessionId];
+            }
+
             const uniqueFileName = `${uuidv4()}.pdf`;
-            const fileMetadata = {
-                name: uniqueFileName,
-                parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
-            };
-
-            // Create a readable stream from an empty buffer
-            const bufferStream = new stream.PassThrough();
-            bufferStream.end(Buffer.from([]));
-
+            
+            // Create drive file first
             const response = await drive.files.create({
-                requestBody: fileMetadata,
-                media: {
-                    mimeType: 'application/pdf',
-                    body: bufferStream
+                requestBody: {
+                    name: uniqueFileName,
+                    parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
                 },
                 fields: 'id'
             });
@@ -95,26 +99,38 @@ const uploadChunk = async (req, res) => {
                 totalSize: parseInt(totalChunks) * chunkSize,
                 receivedChunks: new Set(),
                 originalFileName: fileName,
-                uniqueFileName: uniqueFileName
+                uniqueFileName: uniqueFileName,
+                lastActivity: Date.now()
             };
+            
+            sessionTimestamps[sessionId] = Date.now();
         }
 
+        // Verify session exists and is valid
         const session = uploadSessions[sessionId];
         if (!session) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Upload session not found' 
-            });
+            console.error(`Session not found: ${sessionId}`);
+            console.error('Active sessions:', Object.keys(uploadSessions));
+            console.error('Session timestamps:', sessionTimestamps);
+            throw new Error('Upload session not found');
         }
 
-        // Add chunk to session buffer
+        // Update last activity
+        session.lastActivity = Date.now();
+        
+        // Add chunk with validation
         const chunkIndexNum = parseInt(chunkIndex);
         if (!session.receivedChunks.has(chunkIndexNum)) {
-            session.buffer = Buffer.concat([
-                session.buffer,
-                chunk
-            ]);
-            session.receivedChunks.add(chunkIndexNum);
+            try {
+                session.buffer = Buffer.concat([
+                    session.buffer,
+                    chunk
+                ]);
+                session.receivedChunks.add(chunkIndexNum);
+            } catch (error) {
+                console.error('Error adding chunk:', error);
+                throw new Error('Failed to process chunk');
+            }
         }
 
         // Check if this is the last chunk
@@ -186,12 +202,13 @@ const uploadChunk = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Chunk upload error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Chunk upload failed', 
-            error: error.message 
+        console.error('Chunk upload error:', {
+            error,
+            sessionId: req.body?.sessionId,
+            chunkIndex: req.body?.chunkIndex,
+            totalChunks: req.body?.totalChunks
         });
+        throw error;
     } finally {
         if (client) {
             client.release();
@@ -199,4 +216,16 @@ const uploadChunk = async (req, res) => {
     }
 };
 
-module.exports = uploadChunk;
+// Export the retry wrapper instead of the original function
+module.exports = async (req, res) => {
+    try {
+        const result = await uploadChunkWithRetry(req, res);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            error: error.message
+        });
+    }
+};

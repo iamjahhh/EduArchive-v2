@@ -63,79 +63,93 @@ const Admin = () => {
         }
     };
 
-    const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
-
     const uploadFileInChunks = async (file, formDetails) => {
+        const CHUNK_SIZE = 2 * 1024 * 1024; // Reduce chunk size to 2MB
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
         const sessionId = uuidv4();
         let uploadedChunks = 0;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
 
-        // Initialize upload stats
+        // Initialize upload stats...
         setUploadStats({
             totalSize: file.size,
             uploadedSize: 0,
             startTime: Date.now(),
-            chunks: Array(totalChunks).fill({ status: 'pending', speed: 0, time: 0 })
+            chunks: Array(totalChunks).fill({ status: 'pending', speed: 0, time: 0 }),
+            error: null
         });
         setShowUploadProgress(true);
 
         try {
             for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-                const start = chunkIndex * CHUNK_SIZE;
-                const end = Math.min(file.size, start + CHUNK_SIZE);
-                const chunk = file.slice(start, end);
-                const chunkStartTime = Date.now();
+                let success = false;
+                retryCount = 0;
 
-                const formData = new FormData();
-                formData.append('chunk', chunk);
-                formData.append('chunkIndex', chunkIndex.toString());
-                formData.append('totalChunks', totalChunks.toString());
-                formData.append('fileName', file.name);
-                formData.append('sessionId', sessionId);
-                formData.append('chunkSize', chunk.size.toString());
+                while (!success && retryCount < MAX_RETRIES) {
+                    try {
+                        const start = chunkIndex * CHUNK_SIZE;
+                        const end = Math.min(file.size, start + CHUNK_SIZE);
+                        const chunk = file.slice(start, end);
+                        const chunkStartTime = Date.now();
 
-                if (chunkIndex === totalChunks - 1) {
-                    Object.entries(formDetails).forEach(([key, value]) => {
-                        formData.append(key, value);
-                    });
-                }
+                        const formData = new FormData();
+                        formData.append('chunk', chunk);
+                        formData.append('chunkIndex', chunkIndex.toString());
+                        formData.append('totalChunks', totalChunks.toString());
+                        formData.append('fileName', file.name);
+                        formData.append('sessionId', sessionId);
 
-                const response = await fetch('/api/UploadChunk', {
-                    method: 'POST',
-                    body: formData,
-                });
+                        if (chunkIndex === totalChunks - 1) {
+                            Object.entries(formDetails).forEach(([key, value]) => {
+                                formData.append(key, value);
+                            });
+                        }
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'Upload failed');
-                }
+                        const response = await fetch('/api/UploadChunk', {
+                            method: 'POST',
+                            body: formData,
+                        });
 
-                const result = await response.json();
-                uploadedChunks++;
+                        if (!response.ok) {
+                            throw new Error((await response.json()).message);
+                        }
 
-                // Calculate chunk stats
-                const chunkEndTime = Date.now();
-                const chunkTime = chunkEndTime - chunkStartTime;
-                const chunkSpeed = (chunk.size / 1024 / 1024) / (chunkTime / 1000); // MB/s
+                        const result = await response.json();
+                        success = true;
+                        uploadedChunks++;
 
-                // Update upload stats
-                setUploadStats(prev => ({
-                    ...prev,
-                    uploadedSize: prev.uploadedSize + chunk.size,
-                    chunks: prev.chunks.map((c, i) =>
-                        i === chunkIndex ?
-                            { status: 'completed', speed: chunkSpeed, time: chunkTime } :
-                            c
-                    )
-                }));
+                        // Update chunk stats...
+                        const chunkEndTime = Date.now();
+                        const chunkTime = chunkEndTime - chunkStartTime;
+                        const chunkSpeed = (chunk.size / 1024 / 1024) / (chunkTime / 1000);
 
-                if (result.fileId) {
-                    return result.fileId;
+                        setUploadStats(prev => ({
+                            ...prev,
+                            uploadedSize: prev.uploadedSize + chunk.size,
+                            chunks: prev.chunks.map((c, i) =>
+                                i === chunkIndex ?
+                                { status: 'completed', speed: chunkSpeed, time: chunkTime } :
+                                c
+                            )
+                        }));
+
+                        if (result.fileId) {
+                            return result.fileId;
+                        }
+                    } catch (error) {
+                        retryCount++;
+                        if (retryCount === MAX_RETRIES) {
+                            throw error;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                    }
                 }
             }
         } catch (error) {
             setUploadStats(prev => ({
                 ...prev,
+                error: error.message,
                 chunks: prev.chunks.map(c =>
                     c.status === 'pending' ? { ...c, status: 'failed' } : c
                 )
