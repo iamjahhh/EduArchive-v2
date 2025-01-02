@@ -209,26 +209,22 @@ const Admin = () => {
                                 <div className="form-group">
                                     <label htmlFor="uploadSummary">Summary:</label>
                                     <textarea id="uploadSummary" placeholder="Summary of the resource" required></textarea>
-                                </div>
-                                <div className="d-flex-row">
-                                    <div className={`spinner ${isUploading ? '' : 'hidden'}`}></div>
-                                    <button
-                                        type="submit"
-                                        className="upload-btn"
-                                        disabled={isUploading || !fileUploaded}
-                                    >
-                                        {isUploading ? 'Uploading...' : 'Upload Resource'}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="red-btn"
-                                        data-bs-dismiss="modal"
-                                        style={{ marginLeft: '1rem' }}
-                                        onClick={resetForm}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
+                                </div><div className={`spinner ${isUploading ? '' : 'hidden'}`}></div>
+                                <button
+                                    type="submit"
+                                    className="upload-btn"
+                                    disabled={isUploading || !fileUploaded}
+                                >
+                                    {isUploading ? 'Uploading...' : 'Upload Resource'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="red-btn"
+                                    data-bs-dismiss="modal"
+                                    onClick={resetForm}
+                                >
+                                    Cancel
+                                </button>
                             </form>
                         </div>
                     </div>
