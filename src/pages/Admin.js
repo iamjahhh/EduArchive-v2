@@ -112,6 +112,14 @@ const Admin = () => {
         setSelectedTopic(e.target.value);
     };
 
+    const handleEditClick = (file) => {
+        setModalFile(file);
+    };
+
+    const handleDeleteClick = (file) => {
+        setModalFile(file);
+    };
+
     return (
         <>
             <div className="admin-container">
@@ -127,7 +135,7 @@ const Admin = () => {
 
                 <div className="files-list">
                     {files.map(file => (
-                        <div className="file-item">
+                        <div key={file.id} className="file-item">
                             {file.thumbnailUrl && (
                                 <img
                                     src={file.thumbnailUrl}
@@ -147,7 +155,7 @@ const Admin = () => {
                                     className="upload-btn"
                                     data-bs-toggle="modal"
                                     data-bs-target="#editModal"
-                                    onClick={setModalFile(file)}
+                                    onClick={() => handleEditClick(file)}
                                 >Edit</button>
 
                                 <button
@@ -155,7 +163,7 @@ const Admin = () => {
                                     className="red-btn"
                                     data-bs-toggle="modal"
                                     data-bs-target="#deleteModal"
-                                    onClick={setModalFile(file)}
+                                    onClick={() => handleDeleteClick(file)}
                                 >Delete</button>
                             </div>
                         </div>
@@ -272,9 +280,7 @@ const Admin = () => {
                                     onClick={resetForm}
                                 >
                                     Cancel
-                                </button>
-                            </form>
-                        </div>
+                                </button>                            </form>                        </div>
                     </div>
                 </div>
             </div>
