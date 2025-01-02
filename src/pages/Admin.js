@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import "./Admin.css"
-
+import { v4 as uuidv4 } from 'uuid';
 import bootstrap from 'bootstrap/dist/js/bootstrap.bundle';
 
 const Admin = () => {
@@ -58,52 +58,42 @@ const Admin = () => {
     const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
 
     const uploadFileInChunks = async (file) => {
-        const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    
-        let uploadUrl = null;
-        let fileId = null;
-    
+        const sessionId = uuidv4();
+
         for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
             const start = chunkIndex * CHUNK_SIZE;
             const end = Math.min(file.size, start + CHUNK_SIZE);
             const chunk = file.slice(start, end);
-    
+
             const formData = new FormData();
             formData.append('chunk', chunk);
             formData.append('chunkIndex', chunkIndex);
             formData.append('totalChunks', totalChunks);
             formData.append('fileName', file.name);
-    
-            if (chunkIndex === 0) {
-                const response = await fetch('/api/UploadChunk', { method: 'POST', body: formData });
-                const data = await response.json();
-    
-                if (data.success) {
-                    uploadUrl = data.uploadUrl; // Save the uploadUrl
-                    fileId = data.fileId;      // Save the fileId
-                } else {
-                    throw new Error(data.message || 'Failed to start upload');
-                }
-            } else {
-                const response = await fetch(uploadUrl, { method: 'PUT', body: chunk });
-                if (!response.ok) {
-                    throw new Error('Chunk upload failed');
-                }
+            formData.append('sessionId', sessionId);
+
+            const response = await fetch('/api/UploadChunk', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data?.message || 'Chunk upload failed');
             }
         }
-    
-        return fileId;
+
+        return sessionId;
     };
-    
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsUploading(true);
 
         try {
-            const uploadUrl = await uploadFileInChunks(fileUploaded);
-            if (uploadUrl) {
+            const sessionId = await uploadFileInChunks(fileUploaded);
+            if (sessionId) {
                 alert('File uploaded successfully!');
             }
         } catch (error) {

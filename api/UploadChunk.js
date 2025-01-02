@@ -1,9 +1,8 @@
 const { google } = require('googleapis');
-const stream = require('stream');
-const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
-const upload = multer().single('chunk');
 const axios = require('axios');
+
+const upload = multer().single('chunk');
 
 const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -22,6 +21,9 @@ const drive = google.drive({
 
 const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
 
+// In-memory storage for upload URLs and file IDs
+const uploadSessions = {};
+
 const uploadChunk = async (req, res) => {
     try {
         await new Promise((resolve, reject) => {
@@ -35,7 +37,7 @@ const uploadChunk = async (req, res) => {
             return res.status(400).json({ success: false, message: 'No file chunk provided' });
         }
 
-        const { chunkIndex, totalChunks, fileName } = req.body;
+        const { chunkIndex, totalChunks, fileName, sessionId } = req.body;
         const chunk = req.file.buffer;
 
         if (chunkIndex === '0') {
@@ -53,8 +55,10 @@ const uploadChunk = async (req, res) => {
             });
 
             const uploadUrl = response.headers.location;
-            req.session.uploadUrl = uploadUrl; // Store upload URL in session
-            req.session.fileId = response.data.id;
+            uploadSessions[sessionId] = {
+                uploadUrl,
+                fileId: response.data.id
+            };
 
             return res.json({
                 success: true,
@@ -63,11 +67,12 @@ const uploadChunk = async (req, res) => {
             });
         }
 
-        const uploadUrl = req.session.uploadUrl;
-        if (!uploadUrl) {
-            return res.status(400).json({ success: false, message: 'Upload URL not found' });
+        const session = uploadSessions[sessionId];
+        if (!session) {
+            return res.status(400).json({ success: false, message: 'Upload session not found' });
         }
 
+        const { uploadUrl, fileId } = session;
         const start = chunkIndex * CHUNK_SIZE;
         const end = start + chunk.byteLength - 1;
         const totalSize = totalChunks * CHUNK_SIZE;
@@ -78,12 +83,12 @@ const uploadChunk = async (req, res) => {
             },
         });
 
-
         if (parseInt(chunkIndex) + 1 === parseInt(totalChunks)) {
+            delete uploadSessions[sessionId]; // Clean up the session
             res.json({
                 success: true,
                 message: 'File uploaded successfully',
-                fileId: req.session.fileId,
+                fileId: fileId,
             });
         } else {
             res.json({ success: true });
