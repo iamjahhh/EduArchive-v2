@@ -31,6 +31,10 @@ const uploadChunk = async (req, res) => {
             });
         });
 
+        if (!req.file || !req.file.buffer) {
+            return res.status(400).json({ success: false, message: 'No file chunk provided' });
+        }
+
         const { chunkIndex, totalChunks, fileName } = req.body;
         const chunk = req.file.buffer;
 
@@ -40,37 +44,42 @@ const uploadChunk = async (req, res) => {
                 name: fileName,
                 parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID],
             };
-        
+
             const response = await drive.files.create({
                 requestBody: fileMetadata,
                 media: { mimeType: 'application/pdf' },
                 fields: 'id',
                 uploadType: 'resumable',
             });
-        
+
             const uploadUrl = response.headers.location;
-        
-            return res.json({ 
-                success: true, 
-                uploadUrl, 
-                fileId: response.data.id 
+            req.session.uploadUrl = uploadUrl; // Store upload URL in session
+            req.session.fileId = response.data.id;
+
+            return res.json({
+                success: true,
+                uploadUrl,
+                fileId: response.data.id
             });
         }
-        
 
-        // Upload the current chunk
         const uploadUrl = req.session.uploadUrl;
+        if (!uploadUrl) {
+            return res.status(400).json({ success: false, message: 'Upload URL not found' });
+        }
+
         const start = chunkIndex * CHUNK_SIZE;
         const end = start + chunk.byteLength - 1;
+        const totalSize = totalChunks * CHUNK_SIZE;
 
         await axios.put(uploadUrl, chunk, {
             headers: {
-                'Content-Range': `bytes ${start}-${end}/${totalChunks * CHUNK_SIZE}`,
+                'Content-Range': `bytes ${start}-${end}/${totalSize}`,
             },
         });
 
+
         if (parseInt(chunkIndex) + 1 === parseInt(totalChunks)) {
-            // Finalize the upload and save the file metadata
             res.json({
                 success: true,
                 message: 'File uploaded successfully',
