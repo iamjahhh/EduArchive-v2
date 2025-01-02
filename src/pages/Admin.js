@@ -513,7 +513,7 @@ const Admin = () => {
                         <div className="modal-body">
                             <div className="upload-progress-container">
                                 {/* Upload Stats */}
-                                <div className="upload-stats mb-4">
+                                <div className="upload-stats mb-4 justify-content-center align-items-center">
                                     <div className="row text-center g-3">
                                         <div className="col-12 col-md-4">
                                             <div className="stat-label text-muted">Total Size</div>
