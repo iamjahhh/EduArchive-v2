@@ -1,6 +1,8 @@
 const { google } = require('googleapis');
 const stream = require('stream');
 const { v4: uuidv4 } = require('uuid');
+const multer = require('multer');
+const upload = multer().single('chunk');
 
 const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -21,6 +23,13 @@ const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB
 
 const uploadChunk = async (req, res) => {
     try {
+        await new Promise((resolve, reject) => {
+            upload(req, res, (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+
         const { chunkIndex, totalChunks, fileName } = req.body;
         const chunk = req.file.buffer;
 
