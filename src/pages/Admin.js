@@ -499,7 +499,8 @@ const Admin = () => {
                     </div>
                 </div>
             </div>
-
+            
+            {/*Upload Progress Modal*/}
             <div className="modal fade" id="uploadProgressModal" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-lg modal-dialog-centered">
                     <div className="modal-content shadow-sm border-0">
@@ -513,7 +514,7 @@ const Admin = () => {
                         <div className="modal-body">
                             <div className="upload-progress-container">
                                 {/* Upload Stats */}
-                                <div className="upload-stats mb-4 justify-content-center align-items-center">
+                                <div className="upload-stats mb-4 d-flex justify-content-center align-items-center">
                                     <div className="row text-center g-3">
                                         <div className="col-12 col-md-4">
                                             <div className="stat-label text-muted">Total Size</div>
