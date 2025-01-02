@@ -25,19 +25,14 @@ async function getDriveFileUrl(fileId, isThumbnail = false) {
     try {
         const response = await drive.files.get({
             fileId: fileId,
-            fields: 'webContentLink,webViewLink',
-            supportsAllDrives: true
+            fields: 'webContentLink,webViewLink'
         });
 
-        // For thumbnails use direct link, for PDFs use preview link
-        let url = isThumbnail ? response.data.webContentLink : response.data.webViewLink;
-        
-        // Remove confirmation prompt from thumbnail URLs
-        if (isThumbnail && url) {
-            url = url.replace('&export=download', '');
+        if (isThumbnail) {
+            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
         }
 
-        return url;
+        return response.data.webViewLink;
     } catch (error) {
         console.error(`Error getting file ${fileId}:`, error);
         return null;

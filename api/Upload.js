@@ -5,7 +5,6 @@ const { google } = require('googleapis');
 const { v4: uuidv4 } = require('uuid');
 const stream = require('stream');
 const multer = require('multer');
-const nodeHtmlToImage = require('node-html-to-image');
 
 const pool = new Pool({
     ...dbFilesConf,
@@ -51,62 +50,14 @@ async function compressPDF(buffer) {
     return Buffer.from(compressedPdfBytes);
 }
 
-async function generateThumbnail(pdfUrl) {
-    try {
-        const html = `
-            <html>
-                <head>
-                    <style>
-                        body {
-                            width: 200px;
-                            height: 280px;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            margin: 0;
-                            background: white;
-                        }
-                        iframe {
-                            width: 100%;
-                            height: 100%;
-                            border: none;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <iframe src="${pdfUrl}#page=1"></iframe>
-                </body>
-            </html>
-        `;
-
-        const image = await nodeHtmlToImage({
-            html: html,
-            quality: 100,
-            type: 'png',
-            puppeteerArgs: {
-                args: ['--no-sandbox']
-            }
-        });
-
-        return image;
-    } catch (error) {
-        console.error('Thumbnail generation error:', error);
-        return null;
-    }
-}
-
-async function uploadToDrive(buffer, name, mimeType, isFile = true) {
+async function uploadToDrive(buffer, name, mimeType) {
     try {
         const bufferStream = new stream.PassThrough();
         bufferStream.end(buffer);
 
-        const folderId = isFile 
-            ? process.env.GOOGLE_DRIVE_FILES_FOLDER_ID 
-            : process.env.GOOGLE_DRIVE_THUMBNAILS_FOLDER_ID;
-
         const fileMetadata = {
             name,
-            parents: [folderId]
+            parents: [process.env.GOOGLE_DRIVE_FILES_FOLDER_ID]
         };
 
         const media = {
@@ -114,11 +65,11 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             body: bufferStream
         };
 
-        // Create file with more fields in response
+        // Create file
         const file = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
-            fields: 'id, webContentLink, webViewLink'
+            fields: 'id, webContentLink, webViewLink, thumbnailLink'
         });
 
         // Set public permissions
@@ -139,13 +90,11 @@ async function uploadToDrive(buffer, name, mimeType, isFile = true) {
             }
         });
 
-        // Immediately get a direct link that doesn't require authentication
-        const publicUrl = file.data.webContentLink.replace('&export=download', '');
-
         return {
             fileId: file.data.id,
-            webContentLink: publicUrl,
-            webViewLink: file.data.webViewLink
+            webContentLink: file.data.webContentLink.replace('&export=download', ''),
+            webViewLink: file.data.webViewLink,
+            thumbnailLink: `https://drive.google.com/thumbnail?id=${file.data.id}&sz=w200`
         };
     } catch (error) {
         console.error('Drive upload error:', error);
@@ -176,21 +125,8 @@ module.exports = async (req, res) => {
         const { title, author, year, topic, keywords, summary } = req.body;
         const compressedPdfBuffer = await compressPDF(req.file.buffer);
 
-        // First upload the PDF
-        const pdfUpload = await uploadToDrive(compressedPdfBuffer, `${uuidv4()}.pdf`, 'application/pdf', true);
-        
-        console.log('PDF uploaded, URL:', pdfUpload.webContentLink);
-        
-        // Generate thumbnail using the public URL
-        const thumbnailBuffer = await generateThumbnail(pdfUpload.webContentLink);
-        
-        if (!thumbnailBuffer) {
-            console.log('Failed to generate thumbnail');
-            throw new Error('Failed to generate thumbnail');
-        }
-
-        // Upload the thumbnail
-        const thumbnailUpload = await uploadToDrive(thumbnailBuffer, `${uuidv4()}_thumbnail.png`, 'image/png', false);
+        // Upload PDF and get file info including thumbnail
+        const uploadResult = await uploadToDrive(compressedPdfBuffer, `${uuidv4()}.pdf`, 'application/pdf');
 
         client = await pool.connect();
 
@@ -199,7 +135,7 @@ module.exports = async (req, res) => {
             (title, author, year, topic, keywords, summary, file_id, thumbnail_id) 
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
             RETURNING id`,
-            [title, author, year, topic, keywords, summary, pdfUpload.fileId, thumbnailUpload.fileId]
+            [title, author, year, topic, keywords, summary, uploadResult.fileId, uploadResult.fileId]
         );
 
         return res.status(200).json({
