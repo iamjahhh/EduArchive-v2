@@ -481,3 +481,50 @@ button:disabled {
 .chunks-list::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+/* Modern Modal Styles */
+.upload-progress-modal .modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.upload-stats {
+    background: linear-gradient(145deg, #f8f9fa, #ffffff);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-family: 'SF Mono', 'Roboto Mono', monospace;
+}
+
+.chunk-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+}
+
+.chunk-item:hover {
+    transform: translateY(-1px);
+}
+
+.success-icon {
+    animation: scaleIn 0.5s ease;
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+
+/* Remove existing chunk-status styles and use Bootstrap badges instead */
