@@ -364,120 +364,15 @@ button:disabled {
     font-size: 0.9em;
 }
 
-/* Modern Upload Progress Modal Styles */
-.upload-progress-modal {
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(5px);
+@keyframes growWidth {
+    from {
+        width: 0;
+    }
+    to {
+        width: 100%; /* Static width for keyframes */
+    }
 }
 
-.upload-progress-content {
-    background: #fff;
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.upload-progress-header {
-    border-bottom: none;
-    padding-bottom: 20px;
-}
-
-.upload-stats {
-    background: linear-gradient(145deg, #f6f9fc, #ffffff);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    margin-bottom: 25px;
-}
-
-.progress-bar-container {
-    width: 100%;
-    height: 8px;
-    background: #edf2f7;
-    border-radius: 4px;
-    margin: 15px 0;
-    overflow: hidden;
-}
-
-.progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #00a126, #00c234);
-    transition: width 0.3s ease;
-    border-radius: 4px;
-}
-
-.chunks-list {
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 15px;
-    border-radius: 12px;
-    background: #f8fafc;
-}
-
-.chunk-item {
-    background: white;
-    margin-bottom: 8px;
-    padding: 12px 15px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    transition: all 0.2s ease;
-}
-
-.chunk-item:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.chunk-status {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    margin-right: 12px;
-}
-
-.chunk-status.completed {
-    background: #00a126;
-    color: white;
-}
-
-.chunk-status.pending {
-    background: #f9a825;
-    color: white;
-}
-
-.chunk-status.failed {
-    background: #e53935;
-    color: white;
-}
-
-.chunk-stats {
-    font-family: 'SF Mono', 'Roboto Mono', monospace;
-    color: #4a5568;
-    font-size: 0.9em;
-    padding: 2px 8px;
-    background: #edf2f7;
-    border-radius: 4px;
-    margin-left: auto;
-}
-
-/* Custom Scrollbar */
-.chunks-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.chunks-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.chunks-list::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-.chunks-list::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+.progress-bar-animated {
+    animation: growWidth 1s ease-out forwards;
 }

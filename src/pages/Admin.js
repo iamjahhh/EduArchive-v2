@@ -502,9 +502,9 @@ const Admin = () => {
                 <div className="modal-dialog modal-lg modal-dialog-centered">
                     <div className="modal-content shadow-sm border-0">
                         {/* Modal Header */}
-                        <div className="modal-header text-white">
+                        <div className="modal-header">
                             <h5 className="modal-title" id="uploadProgressModal">Uploading Resource</h5>
-                            <button type="button" className="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
 
                         {/* Modal Body */}
@@ -532,21 +532,47 @@ const Admin = () => {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="column">
-                                        <div className="progress-container mb-4">
-                                            <div className="progress" style={{ height: "12px", borderRadius: "6px" }}>
-                                                <div
-                                                    className="progress-bar progress-bar-striped progress-bar-animated bg-success"
-                                                    role="progressbar"
-                                                    style={{
-                                                        width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%`,
-                                                        transition: 'width 0.3s ease',
-                                                    }}
-                                                    aria-valuenow={(uploadStats.uploadedSize / uploadStats.totalSize) * 100}
-                                                    aria-valuemin="0"
-                                                    aria-valuemax="100"
-                                                ></div>
-                                            </div>
+                                </div>
+
+                                <div className="upload-stats mb-4">
+                                    <div className="progress-container mb-4">
+                                        <div
+                                            className="progress"
+                                            style={{
+                                                height: "12px",
+                                                borderRadius: "6px",
+                                                backgroundColor: "#e9ecef",
+                                                overflow: "hidden",
+                                                position: "relative",
+                                            }}
+                                        >
+                                            {/* Animated Progress Bar */}
+                                            <div
+                                                className="progress-bar bg-success progress-bar-animated"
+                                                role="progressbar"
+                                                style={{
+                                                    width: `${(uploadStats.uploadedSize / uploadStats.totalSize) * 100}%`, // Dynamically set width
+                                                    boxShadow: "0 0 10px rgba(72, 182, 73, 0.7)", // Glowing effect
+                                                }}
+                                                aria-valuenow={(uploadStats.uploadedSize / uploadStats.totalSize) * 100}
+                                                aria-valuemin="0"
+                                                aria-valuemax="100"
+                                            ></div>
+
+                                            {/* Percentage Text */}
+                                            <span
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "50%",
+                                                    left: "50%",
+                                                    transform: "translate(-50%, -50%)",
+                                                    fontWeight: "bold",
+                                                    color: "white",
+                                                    textShadow: "1px 1px 2px rgba(0,0,0,0.5)",
+                                                }}
+                                            >
+                                                {`${((uploadStats.uploadedSize / uploadStats.totalSize) * 100).toFixed(1)}%`}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
