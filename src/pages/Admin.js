@@ -191,11 +191,11 @@ const Admin = () => {
                                         <p id="editTitleDelete" style={{ marginTop: "5px", marginBottom: "10px", fontWeight: "bold" }}>
                                             {modalFile.title} ({modalFile.year})
                                         </p>
-                                        <p style={{ marginTop: "5px", marginBottom: "10px" }}>
-                                            Are you sure you want to delete this file? This action cannot be undone.
-                                        </p>
                                         <p>
                                             by <strong>{modalFile.author}</strong>
+                                        </p>
+                                        <p style={{ marginTop: "5px", marginBottom: "10px" }}>
+                                            Are you sure you want to delete this file? This action cannot be undone.
                                         </p>
                                         <button id="confirmDeleteBtn" className="btn btn-danger">Delete</button>
                                     </>
