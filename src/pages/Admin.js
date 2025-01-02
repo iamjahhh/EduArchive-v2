@@ -180,8 +180,6 @@ const Admin = () => {
                         </div>
                         <div className="modal-body">
                             <div className="deleteModal-content">
-                                <span className="close-btn">&times;</span>
-                                <h3 style={{ marginTop: "10px", marginBottom: "5px" }}>Confirm Deletion</h3>
                                 {modalFile && (
                                     <>
                                         <img
@@ -197,7 +195,7 @@ const Admin = () => {
                                 )}
                                 <p style={{ marginTop: "5px", marginBottom: "10px" }}>Are you sure you want to delete this file? This action cannot be undone.</p>
                                 <button id="confirmDeleteBtn" className="red-btn">Delete</button>
-                                <button type="button" className="cancel-btn">Cancel</button>
+                                <button type="button" className="btn btn-secondary ml-3">Cancel</button>
                             </div>
                         </div>
                     </div>
