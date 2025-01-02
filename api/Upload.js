@@ -52,23 +52,31 @@ async function compressPDF(buffer) {
 }
 
 async function generateThumbnail(pdfBuffer) {
-    const formData = new FormData();
-    formData.append('file', pdfBuffer, 'file.pdf');
-    formData.append('pages', '0'); // Only first page for thumbnail
-    formData.append('imageType', 'png'); // Choose image format
-
     try {
-        const response = await axios.post('https://api.pdf.co/v1/pdf/convert/to/image', formData, {
-            headers: {
-                'x-api-key': process.env.PDFCO_API_KEY,
-                ...formData.getHeaders()
+        // Convert PDF buffer to base64
+        const base64Pdf = pdfBuffer.toString('base64');
+
+        // Call PDFLayer API
+        const response = await axios({
+            method: 'post',
+            url: 'https://api.pdflayer.com/api/convert',
+            params: {
+                access_key: process.env.PDFLAYER_API_KEY,
+                document_url: `data:application/pdf;base64,${base64Pdf}`,
+                page: 1,
+                image_format: 'png',
+                width: 200,
+                height: 280,
+                scale: '2.0',
+                background_color: 'white'
             }
         });
 
-        const thumbnailBuffer = Buffer.from(response.data.body, 'base64');
+        // Convert response to buffer
+        const thumbnailBuffer = Buffer.from(response.data, 'base64');
         return thumbnailBuffer;
     } catch (error) {
-        console.error('PDF.co error:', error);
+        console.error('Thumbnail generation error:', error);
         return null;
     }
 }
