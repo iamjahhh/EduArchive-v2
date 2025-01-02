@@ -67,10 +67,10 @@ async function generateThumbnail(pdfUrl) {
                 scale: '2.0',
                 background_color: 'white'
             },
-            responseType: 'arraybuffer'  // Important: get response as buffer
+            responseType: 'arraybuffer'  
         });
 
-        // Response is already a buffer when using responseType: 'arraybuffer'
+        console.error(response.data);
         return response.data;
     } catch (error) {
         console.error('Thumbnail generation error:', error.response?.data || error.message);
@@ -168,6 +168,7 @@ module.exports = async (req, res) => {
         const thumbnailBuffer = await generateThumbnail(pdfUpload.webContentLink);
         
         if (!thumbnailBuffer) {
+            console.log('Failed to generate thumbnail');
             throw new Error('Failed to generate thumbnail');
         }
 
