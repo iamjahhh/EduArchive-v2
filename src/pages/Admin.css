@@ -1,11 +1,9 @@
 .admin-container {
     width: 100%;
+    max-width: 60rem;
     margin: 20px auto;
     padding: 20px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    margin-top: 130px;
+    margin-top: 125px;
     display: flex;
     flex-direction: column;
     gap: 20px;

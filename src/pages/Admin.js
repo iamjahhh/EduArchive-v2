@@ -351,7 +351,7 @@ const Admin = () => {
                 </div>
             ) : (
                 <>
-                    <div className="admin-container">
+                    <div className="animate admin-container">
                         <h2 style={{ alignSelf: "center", fontWeight: "600" }}>Admin Panel</h2>
 
                         <button
