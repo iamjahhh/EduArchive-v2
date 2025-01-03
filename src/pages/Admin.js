@@ -445,7 +445,6 @@ const Admin = () => {
                         {/* Modal Header */}
                         <div className="modal-header">
                             <h5 className="modal-title" id="uploadProgressModal">Uploading Resource</h5>
-                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
 
                         {/* Modal Body */}
@@ -456,7 +455,7 @@ const Admin = () => {
                                     <div className="row text-center g-3">
                                         {/* Total Size */}
                                         <div className="col-12 col-md-4 d-flex justify-content-center align-items-center">
-                                            <div className="stat-card">
+                                            <div className="stat-card text-center">
                                                 <div className="stat-label text-muted">Total Size</div>
                                                 <div className="stat-value h6 fw-bold mt-1">
                                                     {(uploadStats.totalSize / 1024 / 1024).toFixed(2)} MB
@@ -465,7 +464,7 @@ const Admin = () => {
                                         </div>
                                         {/* Uploaded */}
                                         <div className="col-12 col-md-4 d-flex justify-content-center align-items-center">
-                                            <div className="stat-card">
+                                            <div className="stat-card text-center">
                                                 <div className="stat-label text-muted">Uploaded</div>
                                                 <div className="stat-value h6 fw-bold mt-1">
                                                     {(uploadStats.uploadedSize / 1024 / 1024).toFixed(2)} MB
@@ -474,7 +473,7 @@ const Admin = () => {
                                         </div>
                                         {/* Elapsed Time */}
                                         <div className="col-12 col-md-4 d-flex justify-content-center align-items-center">
-                                            <div className="stat-card">
+                                            <div className="stat-card text-center">
                                                 <div className="stat-label text-muted">Elapsed Time</div>
                                                 <div className="stat-value h6 fw-bold mt-1">
                                                     {(elapsedTime / 1000).toFixed(1)}s
@@ -574,32 +573,25 @@ const Admin = () => {
             <div className="modal fade" id="successModal" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content border-0 shadow-lg">
-                        <div className="modal-body text-center p-4 p-sm-5">
-                            {/* Success Icon */}
+                        <div className="modal-header">
                             <div className="success-icon mb-2">
                                 <i className="fas fa-check-circle text-success" style={{ fontSize: '5rem' }}></i>
                             </div>
+                        </div>
 
+                        <div className="modal-body text-center p-4 p-sm-5">
                             {/* Modal Heading */}
                             <h4 className="mb-3 fw-bold">Upload Successful!</h4>
 
                             {/* Upload Details (Optional) */}
                             {uploadResult && (
                                 <div className="upload-details text-start mb-4">
-                                    <p><strong>Title:</strong> {uploadResult.title}</p>
-                                    <p><strong>File:</strong> {uploadResult.fileName}</p>
-                                    <p><strong>Size:</strong> {(uploadResult.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-                                    <p><strong>Upload Time:</strong> {(uploadResult.uploadTime / 1000).toFixed(1)}s</p>
+                                    <p style={{ margin: 0 }}><strong>Title:</strong> {uploadResult.title}</p>
+                                    <p style={{ margin: 0 }}><strong>File:</strong> {uploadResult.fileName}</p>
+                                    <p style={{ margin: 0 }}><strong>Size:</strong> {(uploadResult.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                                    <p style={{ margin: 0 }}><strong>Upload Time:</strong> {(uploadResult.uploadTime / 1000).toFixed(1)}s</p>
                                 </div>
                             )}
-
-                            {/* Done Button */}
-                            <button
-                                className="btn btn-success rounded-pill px-4 py-2"
-                                onClick={() => setShowSuccessModal(false)}
-                            >
-                                <i className="fas fa-check me-2"></i> Done
-                            </button>
                         </div>
                     </div>
                 </div>

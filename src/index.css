@@ -14,3 +14,21 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+::-webkit-scrollbar {
+  width: 5px; /* Make the scrollbar thinner */
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Light background for the scrollbar track */
+  border-radius: 10px; /* Rounded corners for the track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a7a7a7; /* Darker color for the thumb */
+  border-radius: 10px; /* Rounded corners for the thumb */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #777777; /* Darker color when hovered */
+}
