@@ -56,34 +56,40 @@ const Admin = () => {
     }, [showUploadProgress, uploadStats.startTime]);
 
     useEffect(() => {
-        // Wait for DOM elements to be ready
-        const progressModalEl = document.getElementById('uploadProgressModal');
-        const successModalEl = document.getElementById('successModal');
-        const toastEl = document.getElementById('uploadToast');
+        // Initialize modals when component mounts
+        const progressModal = new bootstrap.Modal('#uploadProgressModal', {
+            backdrop: 'static',
+            keyboard: false
+        });
+        
+        // Store modal instance in ref
+        progressModalRef.current = progressModal;
 
-        if (progressModalEl && successModalEl && toastEl) {
-            // Initialize modals with proper options
-            progressModalRef.current = new bootstrap.Modal(progressModalEl, {
-                backdrop: 'static',
-                keyboard: false
-            });
-            
-            successModalRef.current = new bootstrap.Modal(successModalEl);
-            
-            // Initialize toast
-            toastRef.current = new bootstrap.Toast(toastEl, {
-                delay: 5000
-            });
+        // Initialize toast
+        toastRef.current = new bootstrap.Toast('#uploadToast');
+
+        // Show/hide progress modal based on state
+        if (showUploadProgress) {
+            progressModal.show();
         }
+
+        return () => {
+            // Cleanup on unmount
+            if (progressModalRef.current) {
+                progressModalRef.current.dispose();
+            }
+            if (toastRef.current) {
+                toastRef.current.dispose();
+            }
+        };
     }, []); // Run once on mount
 
+    // Handle progress modal visibility
     useEffect(() => {
-        if (progressModalRef.current) {
-            if (showUploadProgress) {
-                progressModalRef.current.show();
-            } else {
-                progressModalRef.current.hide();
-            }
+        if (showUploadProgress) {
+            progressModalRef.current?.show();
+        } else {
+            progressModalRef.current?.hide();
         }
     }, [showUploadProgress]);
 
@@ -218,20 +224,15 @@ const Admin = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Close upload form modal
+        const uploadModal = bootstrap.Modal.getInstance('#uploadModal');
+        uploadModal?.hide();
 
-        // Close upload form modal first
-        try {
-            const uploadModalEl = document.getElementById('uploadModal');
-            if (uploadModalEl) {
-                const uploadModal = bootstrap.Modal.getInstance(uploadModalEl);
-                if (uploadModal) {
-                    uploadModal.hide();
-                }
-            }
-        } catch (error) {
-            console.error('Modal close error:', error);
-        }
-
+        // Reset modal state
+        document.body.classList.remove('modal-open');
+        document.querySelector('.modal-backdrop')?.remove();
+        
         setIsUploading(true);
         setShowUploadProgress(true);
 
