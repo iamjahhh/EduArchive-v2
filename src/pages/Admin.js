@@ -411,7 +411,7 @@ const Admin = () => {
                                                     alt={modalFile.title}
                                                     className="thumbnail"
                                                 />
-                                                
+
                                                 <p id="editTitleDelete" style={{ margin: 0, marginTop: "5px" }}>
                                                     <strong>{modalFile.title} ({modalFile.year})</strong>
                                                     <br />
@@ -512,6 +512,85 @@ const Admin = () => {
                                             disabled={isUploading || !fileUploaded}
                                         >
                                             {isUploading ? 'Uploading...' : 'Upload Resource'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="red-btn"
+                                            onClick={() => closeModalById('uploadModal')}
+                                            disabled={isUploading}
+                                            style={{ marginLeft: '1rem' }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/*Edit Modal*/}
+                    <div className="modal fade" id="editModal" tabIndex="-1" aria-hidden="true">
+                        <div className="modal-dialog">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title" id="editModalLabel">Edit Resource</h5>
+                                    <button type="button" className="btn-close" onClick={() => closeModalById('uploadModal')}></button>
+                                </div>
+                                <div className="modal-body">
+                                    <form id="uploadForm" className="form-container" onSubmit={handleSubmit}>
+                                        {modalFile && (
+                                            <>
+                                                <img
+                                                    src={modalFile.thumbnailUrl}
+                                                    alt={modalFile.title}
+                                                    className="thumbnail"
+                                                />
+                                                <div className="form-group">
+                                                    <label htmlFor="uploadTitle">Title:</label>
+                                                    <input type="text" id="uploadTitle" placeholder="Title" value={modalFile.title} required></input>
+                                                </div>
+                                                <div className="form-group">
+                                                    <label htmlFor="uploadAuthor">Author:</label>
+                                                    <input type="text" id="uploadAuthor" placeholder="Author" value={modalFile.author} required></input>
+                                                </div>
+                                                <div className="form-group">
+                                                    <label htmlFor="uploadYear">Year:</label>
+                                                    <input type="text" id="uploadYear" placeholder="Year" value={modalFile.year} required></input>
+                                                </div>
+                                                <div className="form-group">
+                                                    <label htmlFor="uploadTopics">Topic:</label>
+                                                    <div id="uploadTopics" className="radio-group">
+                                                        {['Science', 'Technology', 'Engineering', 'Mathematics', 'Medicine', 'Education', 'Health'].map((topic) => (
+                                                            <label key={topic} className="radio-option">
+                                                                <input
+                                                                    type="radio"
+                                                                    name="topic"
+                                                                    value={topic}
+                                                                    onChange={handleTopicChange}
+                                                                    checked={modalFile.topic === topic}
+                                                                    required
+                                                                /> {topic}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="form-group">
+                                                    <label htmlFor="uploadKeywords">Keywords:</label>
+                                                    <input type="text" id="uploadKeywords" placeholder="Keywords (comma-separated)" value={modalFile.keywords} required></input>
+                                                </div>
+                                                <div className="form-group">
+                                                    <label htmlFor="uploadSummary">Summary:</label>
+                                                    <textarea id="uploadSummary" placeholder="Summary of the resource" value={modalFile.summary} required></textarea>
+                                                </div>
+                                            </>
+                                        )}
+                                        <div className={`spinner ${isUploading ? '' : 'hidden'}`}></div>
+                                        <button
+                                            type="submit"
+                                            className="upload-btn"
+                                            disabled={isUploading || !fileUploaded}
+                                        >
+                                            {isUploading ? 'Saving...' : 'Save Changes'}
                                         </button>
                                         <button
                                             type="button"
