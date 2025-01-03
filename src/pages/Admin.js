@@ -76,14 +76,6 @@ const Admin = () => {
     }, []);
 
     useEffect(() => {
-        if (showUploadProgress) {
-            progressModalRef.current?.show();
-        } else {
-            progressModalRef.current?.hide();
-        }
-    }, [showUploadProgress]);
-
-    useEffect(() => {
         if (successModalRef.current) {
             if (showSuccessModal) {
                 successModalRef.current.show();
@@ -263,14 +255,27 @@ const Admin = () => {
         }
     };
 
+    const showUploadProgressModal = () => {
+        const modalEl = document.getElementById('uploadProgressModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            modal.show();
+            return modal;
+        }
+        return null;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         setIsUploading(true);
         setShowUploadProgress(true);
 
-        // First show progress modal
-        progressModalRef.current?.show();
+        // Initialize and show progress modal first
+        const progressModal = showUploadProgressModal();
         
         // Then close upload modal
         closeModal('uploadModal');
@@ -290,7 +295,11 @@ const Admin = () => {
 
             if (fileId) {
                 await fetchFiles();
+                
+                // Hide progress modal
+                progressModal?.hide();
                 setShowUploadProgress(false);
+                
                 setUploadResult({
                     title: formDetails.title,
                     fileName: fileUploaded.name,
