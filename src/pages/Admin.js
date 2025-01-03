@@ -118,6 +118,26 @@ const Admin = () => {
         }
     };
 
+    const deleteFile = async (fileId) => {
+        try {
+            const response = await fetch('/api/DeleteFile',{
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileId })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+            
+            } else {
+                console.error('Error deleting file:', data.message);
+            }
+        } catch (error) {
+            console.error('Error deleting file:', error);
+        }
+    }
+
     const handleFileChange = (event) => {
         const file = event.target.files[0];
         if (file && file.type === 'application/pdf') {
@@ -364,7 +384,11 @@ const Admin = () => {
                                         <p style={{ marginTop: "5px", marginBottom: "10px" }}>
                                             Are you sure you want to delete this file? This action cannot be undone.
                                         </p>
-                                        <button id="confirmDeleteBtn" className="red-btn">Delete</button>
+                                        <button
+                                            id="confirmDeleteBtn"
+                                            className="red-btn"
+                                            onClick={() => deleteFile(modalFile.id)}
+                                        >Delete</button>
                                     </>
                                 )}
                                 <button
