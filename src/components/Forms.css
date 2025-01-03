@@ -1,0 +1,30 @@
+.additional-options {
+    text-align: right; 
+    margin-bottom: 15px; 
+}
+
+.additional-options a {
+    color: #007BFF; 
+    font-size: 14px; 
+    text-decoration: none; 
+    transition: color 0.3s ease;
+    font-style: normal;
+}
+
+.switch {
+    text-align: center;
+    margin-top: 10px; 
+}
+
+.switch button {
+    background: none;
+    border: none;
+    color: #343434;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.switch button:hover {
+    color: #555;
+}

@@ -64,14 +64,12 @@ async function uploadToDrive(buffer, name, mimeType) {
             body: bufferStream
         };
 
-        // Create file
         const file = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
             fields: 'id, webContentLink, webViewLink, thumbnailLink'
         });
 
-        // Set public permissions
         await drive.permissions.create({
             fileId: file.data.id,
             requestBody: {
@@ -80,7 +78,6 @@ async function uploadToDrive(buffer, name, mimeType) {
             }
         });
 
-        // Update sharing settings
         await drive.files.update({
             fileId: file.data.id,
             requestBody: {

@@ -61,7 +61,7 @@ const Admin = () => {
             backdrop: 'static',
             keyboard: false
         });
-        
+
         // Store modal instance in ref
         progressModalRef.current = progressModal;
 
@@ -224,7 +224,7 @@ const Admin = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         // Close upload form modal
         const uploadModal = bootstrap.Modal.getInstance('#uploadModal');
         uploadModal?.hide();
@@ -232,7 +232,7 @@ const Admin = () => {
         // Reset modal state
         document.body.classList.remove('modal-open');
         document.querySelector('.modal-backdrop')?.remove();
-        
+
         setIsUploading(true);
         setShowUploadProgress(true);
 
@@ -364,10 +364,18 @@ const Admin = () => {
                                         <p style={{ marginTop: "5px", marginBottom: "10px" }}>
                                             Are you sure you want to delete this file? This action cannot be undone.
                                         </p>
-                                        <button id="confirmDeleteBtn" className="btn btn-danger">Delete</button>
+                                        <button id="confirmDeleteBtn" className="red-btn">Delete</button>
                                     </>
                                 )}
-                                <button type="button" style={{ marginLeft: "15px" }} className="btn btn-secondary">Cancel</button>
+                                <button
+                                    type="button"
+                                    className="cancel-btn"
+                                    data-bs-dismiss="modal"
+                                    style={{ marginLeft: '1rem' }}
+                                    onClick={resetForm}
+                                >
+                                    Cancel
+                                </button>
                             </div>
                         </div>
                     </div>
