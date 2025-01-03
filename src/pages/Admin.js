@@ -411,10 +411,11 @@ const Admin = () => {
                                                     alt={modalFile.title}
                                                     className="thumbnail"
                                                 />
+                                                
                                                 <p id="editTitleDelete" style={{ margin: 0, marginTop: "5px" }}>
                                                     <strong>{modalFile.title} ({modalFile.year})</strong>
                                                     <br />
-                                                    by <strong><em>{modalFile.author}</em></strong>
+                                                    by <em style={{ fontWeight: "600" }}>{modalFile.author}</em>
                                                 </p>
 
                                                 <p style={{ marginTop: "5px", marginBottom: "10px" }}>
