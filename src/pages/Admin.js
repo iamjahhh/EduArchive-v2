@@ -132,6 +132,7 @@ const Admin = () => {
             const data = await response.json();
 
             if (data.success) {
+                await fetchFiles();
                 setIsDeleting(false);
 
                 const deleteModal = bootstrap.Modal.getInstance('#deleteModal');
