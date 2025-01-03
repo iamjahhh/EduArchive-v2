@@ -395,3 +395,7 @@ button:disabled {
 .toast small {
     opacity: 0.9;
 }
+
+.modal-title {
+    font-weight: bold;
+}

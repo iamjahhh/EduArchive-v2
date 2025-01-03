@@ -534,7 +534,7 @@ const Admin = () => {
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title" id="editModalLabel">Edit Resource</h5>
-                                    <button type="button" className="btn-close" onClick={() => closeModalById('uploadModal')}></button>
+                                    <button type="button" className="btn-close" onClick={() => closeModalById('editModal')}></button>
                                 </div>
                                 <div className="modal-body">
                                     <form id="uploadForm" className="form-container" onSubmit={handleSubmit}>
@@ -588,14 +588,14 @@ const Admin = () => {
                                         <button
                                             type="submit"
                                             className="upload-btn"
-                                            disabled={isUploading || !fileUploaded}
+                                            disabled={isUploading}
                                         >
                                             {isUploading ? 'Saving...' : 'Save Changes'}
                                         </button>
                                         <button
                                             type="button"
                                             className="red-btn"
-                                            onClick={() => closeModalById('uploadModal')}
+                                            onClick={() => closeModalById('editModal')}
                                             disabled={isUploading}
                                             style={{ marginLeft: '1rem' }}
                                         >
