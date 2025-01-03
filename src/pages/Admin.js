@@ -100,7 +100,7 @@ const Admin = () => {
         }
     };
 
-    // Update the handleModal function
+    // Update the handleModal function to properly handle backdrops
     const handleModal = (modalId, action) => {
         try {
             const modalEl = document.getElementById(modalId);
@@ -109,28 +109,21 @@ const Admin = () => {
             let modalInstance = bootstrap.Modal.getInstance(modalEl);
 
             if (action === 'hide') {
-                // If hiding, just hide the current instance if it exists
                 if (modalInstance) {
                     modalInstance.hide();
-                    // Wait for hide animation
-                    setTimeout(() => {
-                        modalInstance.dispose();
-                        // Clean up any lingering backdrops and classes
-                        const backdrops = document.querySelectorAll('.modal-backdrop');
-                        backdrops.forEach(backdrop => backdrop.remove());
-                        document.body.classList.remove('modal-open');
-                        document.body.style.paddingRight = '';
-                    }, 300);
+                    // Don't dispose or cleanup here - let Bootstrap handle it
                 }
                 return null;
             }
 
             if (action === 'show') {
-                // If showing, dispose old instance first
+                // If there's an existing instance, hide it properly first
                 if (modalInstance) {
+                    modalInstance.hide();
                     modalInstance.dispose();
                 }
-                // Create fresh modal instance with appropriate options
+
+                // Create new modal instance with proper options
                 modalInstance = new bootstrap.Modal(modalEl, {
                     backdrop: modalId === 'uploadProgressModal' ? 'static' : true,
                     keyboard: modalId === 'uploadProgressModal' ? false : true
@@ -289,16 +282,19 @@ const Admin = () => {
         handleModal('uploadProgressModal', 'show');
     };
 
-    // Update handleSubmit:
+    // Update handleSubmit to handle modal transitions better
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsUploading(true);
         setShowUploadProgress(true);
 
-        // Close upload modal first
-        handleModal('uploadModal', 'hide');
-        // Then show progress modal and store the instance
+        // Show progress modal first
         const progressModal = handleModal('uploadProgressModal', 'show');
+        
+        // Brief delay before hiding upload modal to ensure smooth transition
+        setTimeout(() => {
+            handleModal('uploadModal', 'hide');
+        }, 150);
 
         try {
             const formDetails = {
