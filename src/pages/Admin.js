@@ -24,6 +24,7 @@ const Admin = () => {
     const timerRef = useRef(null);
     const toastRef = useRef(null);
     const deleteToastRef = useRef(null); // Declare deleteToastRef
+    const uploadModalRef = useRef(null);  // Add this ref
 
     // Add refs for modals
     const progressModalRef = useRef(null);
@@ -58,9 +59,14 @@ const Admin = () => {
     }, [showUploadProgress, uploadStats.startTime]);
 
     useEffect(() => {
+        const uploadModalEl = document.getElementById('uploadModal');
         const progressModalEl = document.getElementById('uploadProgressModal');
         const toastEl = document.getElementById('uploadToast');
         const deleteToastEl = document.getElementById('deleteToast');
+
+        if (uploadModalEl) {
+            uploadModalRef.current = new bootstrap.Modal(uploadModalEl);
+        }
         
         if (progressModalEl) {
             progressModalRef.current = new bootstrap.Modal(progressModalEl, {
@@ -118,9 +124,6 @@ const Admin = () => {
             modalInstance.show();
         } else if (action === 'hide') {
             modalInstance.hide();
-            
-            const backdropEls = document.querySelectorAll('.modal-backdrop.fade.show');
-            if (backdropEls) backdropEls.forEach(backdropEl => backdropEl.remove());
         }
     };
 
@@ -180,7 +183,7 @@ const Admin = () => {
             chunks: Array(totalChunks).fill({ status: 'pending', speed: 0, time: 0 }),
             error: null
         });
-        
+
         setShowUploadProgress(true);
 
         try {
@@ -267,7 +270,7 @@ const Admin = () => {
 
         // Show progress modal first
         handleModal('uploadProgressModal', 'show');
-        
+
         // Brief delay before hiding upload modal to ensure smooth transition
         setTimeout(() => {
             handleModal('uploadModal', 'hide');
@@ -288,11 +291,11 @@ const Admin = () => {
 
             if (fileId) {
                 await fetchFiles();
-                
+
                 // Hide progress modal using handleModal instead of direct reference
                 handleModal('uploadProgressModal', 'hide');
                 setShowUploadProgress(false);
-                
+
                 setUploadResult({
                     title: formDetails.title,
                     fileName: fileUploaded.name,
@@ -304,7 +307,7 @@ const Admin = () => {
                 // Fix toast showing
                 const toast = new bootstrap.Toast(document.getElementById('uploadToast'));
                 toast.show();
-                
+
                 resetForm();
             }
         } catch (error) {
@@ -330,6 +333,13 @@ const Admin = () => {
         setModalFile(file);
     };
 
+    // Add this function to handle upload button click
+    const handleUploadClick = () => {
+        if (uploadModalRef.current) {
+            uploadModalRef.current.show();
+        }
+    };
+
     return (
         <>
             {files.length === 0 ? (
@@ -346,8 +356,7 @@ const Admin = () => {
                         <button
                             type="button"
                             className="upload-btn"
-                            data-bs-toggle="modal"
-                            data-bs-target="#uploadModal"
+                            onClick={handleUploadClick}
                         ><i className="fas fa-upload"></i> Upload New Resource
                         </button>
 
