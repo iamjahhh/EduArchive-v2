@@ -56,12 +56,26 @@ const Admin = () => {
     }, [showUploadProgress, uploadStats.startTime]);
 
     useEffect(() => {
-        progressModalRef.current = new bootstrap.Modal(document.getElementById('uploadProgressModal'), {
-            backdrop: 'static',
-            keyboard: false
-        });
-        successModalRef.current = new bootstrap.Modal(document.getElementById('successModal'));
-    }, []);
+        // Wait for DOM elements to be ready
+        const progressModalEl = document.getElementById('uploadProgressModal');
+        const successModalEl = document.getElementById('successModal');
+        const toastEl = document.getElementById('uploadToast');
+
+        if (progressModalEl && successModalEl && toastEl) {
+            // Initialize modals with proper options
+            progressModalRef.current = new bootstrap.Modal(progressModalEl, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            
+            successModalRef.current = new bootstrap.Modal(successModalEl);
+            
+            // Initialize toast
+            toastRef.current = new bootstrap.Toast(toastEl, {
+                delay: 5000
+            });
+        }
+    }, []); // Run once on mount
 
     useEffect(() => {
         if (progressModalRef.current) {
@@ -82,13 +96,6 @@ const Admin = () => {
             }
         }
     }, [showSuccessModal]);
-
-    useEffect(() => {
-        // Initialize toast
-        toastRef.current = new bootstrap.Toast(document.getElementById('uploadToast'), {
-            delay: 5000
-        });
-    }, []);
 
     const fetchFiles = async () => {
         try {
@@ -212,14 +219,17 @@ const Admin = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const uploadModalElement = document.getElementById('uploadModal');
-        const uploadModalInstance = bootstrap.Modal.getInstance(uploadModalElement);
-        if (uploadModalInstance) {
-            uploadModalInstance.hide();
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) backdrop.remove();
-            document.body.classList.remove('modal-open');
-            document.body.style.paddingRight = '';
+        // Close upload form modal first
+        try {
+            const uploadModalEl = document.getElementById('uploadModal');
+            if (uploadModalEl) {
+                const uploadModal = bootstrap.Modal.getInstance(uploadModalEl);
+                if (uploadModal) {
+                    uploadModal.hide();
+                }
+            }
+        } catch (error) {
+            console.error('Modal close error:', error);
         }
 
         setIsUploading(true);
