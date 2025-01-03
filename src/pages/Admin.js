@@ -142,6 +142,14 @@ const Admin = () => {
         }
     };
 
+    const closeModal = (modalRef) => {
+        if (modalRef.current) {
+            modalRef.current.hide();
+            const backdropElements = document.getElementsByClassName('modal-backdrop');
+            Array.from(backdropElements).forEach(el => el.remove());
+        }
+    };
+
     const deleteFile = async (fileId) => {
         setIsDeleting(true);
 
@@ -416,7 +424,7 @@ const Admin = () => {
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title" id="deleteModalLabel">Delete Resource</h5>
-                                    <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    <button type="button" className="btn-close" onClick={() => closeModal(deleteModalRef)}></button>
                                 </div>
                                 <div className="modal-body">
                                     <div className="deleteModal-content">
@@ -448,10 +456,9 @@ const Admin = () => {
                                         <button
                                             type="button"
                                             className="cancel-btn"
-                                            data-bs-dismiss="modal"
+                                            onClick={() => closeModal(deleteModalRef)}
                                             style={{ marginLeft: '1rem' }}
                                             disabled={isDeleting}
-                                            onClick={resetForm}
                                         >
                                             Cancel
                                         </button>
@@ -467,7 +474,7 @@ const Admin = () => {
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title" id="uploadModalLabel">Upload Resource</h5>
-                                    <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    <button type="button" className="btn-close" onClick={() => closeModal(uploadModalRef)}></button>
                                 </div>
                                 <div className="modal-body">
                                     <form id="uploadForm" className="form-container" onSubmit={handleSubmit}>
@@ -533,10 +540,9 @@ const Admin = () => {
                                         <button
                                             type="button"
                                             className="red-btn"
-                                            data-bs-dismiss="modal"
+                                            onClick={() => closeModal(uploadModalRef)}
                                             disabled={isUploading}
                                             style={{ marginLeft: '1rem' }}
-                                            onClick={resetForm}
                                         >
                                             Cancel
                                         </button>
