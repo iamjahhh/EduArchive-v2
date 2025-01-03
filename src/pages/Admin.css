@@ -375,3 +375,26 @@ button:disabled {
     color: #666;
     font-size: 0.9em;
 }
+
+/* Toast Styles */
+.toast-container {
+    z-index: 1056;
+}
+
+.toast {
+    min-width: 300px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.toast .toast-body {
+    padding: 1rem;
+}
+
+.toast.bg-success {
+    background: rgba(25, 135, 84, 0.95) !important;
+}
+
+.toast small {
+    opacity: 0.9;
+}

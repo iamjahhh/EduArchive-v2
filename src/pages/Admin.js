@@ -21,6 +21,7 @@ const Admin = () => {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [uploadResult, setUploadResult] = useState(null);
     const timerRef = useRef(null);
+    const toastRef = useRef(null);
 
     // Add refs for modals
     const progressModalRef = useRef(null);
@@ -81,6 +82,13 @@ const Admin = () => {
             }
         }
     }, [showSuccessModal]);
+
+    useEffect(() => {
+        // Initialize toast
+        toastRef.current = new bootstrap.Toast(document.getElementById('uploadToast'), {
+            delay: 5000
+        });
+    }, []);
 
     const fetchFiles = async () => {
         try {
@@ -240,7 +248,8 @@ const Admin = () => {
                     uploadTime: elapsedTime,
                     chunks: uploadStats.chunks.length
                 });
-                setShowSuccessModal(true);
+                // Show toast instead of modal
+                toastRef.current?.show();
                 resetForm();
             }
         } catch (error) {
@@ -569,29 +578,26 @@ const Admin = () => {
                 </div>
             </div>
 
-            {/* Success Modal */}
-            <div className="modal fade" id="successModal" tabIndex="-1" aria-hidden="true">
-                <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content border-0 shadow-lg">
-                        <div className="modal-header text-center">
-                            <div className="success-icon mb-2">
-                                <i className="fas fa-check-circle text-success" style={{ fontSize: '5rem' }}></i>
-                                <h4 className="mb-1 fw-bold">Upload Successful!</h4>
-                                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            {/* Upload Success Toast */}
+            <div className="toast-container position-fixed bottom-0 end-0 p-3">
+                <div id="uploadToast" className="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div className="d-flex">
+                        <div className="toast-body">
+                            <div className="d-flex align-items-center">
+                                <i className="fas fa-check-circle me-2"></i>
+                                <div>
+                                    <div className="fw-bold">Upload Successful!</div>
+                                    {uploadResult && (
+                                        <small>
+                                            {uploadResult.fileName} ({(uploadResult.fileSize / 1024 / 1024).toFixed(1)} MB)
+                                            <br />
+                                            Upload time: {(uploadResult.uploadTime / 1000).toFixed(1)}s
+                                        </small>
+                                    )}
+                                </div>
                             </div>
                         </div>
-
-                        <div className="modal-body text-center p-4 p-sm-5">
-                            {/* Upload Details (Optional) */}
-                            {uploadResult && (
-                                <div className="upload-details text-start mb-4">
-                                    <p style={{ margin: 0 }}><strong>Title:</strong> {uploadResult.title}</p>
-                                    <p style={{ margin: 0 }}><strong>File:</strong> {uploadResult.fileName}</p>
-                                    <p style={{ margin: 0, marginTop: "10px" }}><strong>Size:</strong> {(uploadResult.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-                                    <p style={{ margin: 0 }}><strong>Upload Time:</strong> {(uploadResult.uploadTime / 1000).toFixed(1)}s</p>
-                                </div>
-                            )}
-                        </div>
+                        <button type="button" className="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                     </div>
                 </div>
             </div>
