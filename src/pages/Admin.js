@@ -24,7 +24,6 @@ const Admin = () => {
     const timerRef = useRef(null);
     const toastRef = useRef(null);
     const deleteToastRef = useRef(null); // Declare deleteToastRef
-    const uploadModalRef = useRef(null);  // Add this ref
 
     // Add refs for modals
     const progressModalRef = useRef(null);
@@ -59,15 +58,10 @@ const Admin = () => {
     }, [showUploadProgress, uploadStats.startTime]);
 
     useEffect(() => {
-        const uploadModalEl = document.getElementById('uploadModal');
         const progressModalEl = document.getElementById('uploadProgressModal');
         const toastEl = document.getElementById('uploadToast');
         const deleteToastEl = document.getElementById('deleteToast');
 
-        if (uploadModalEl) {
-            uploadModalRef.current = new bootstrap.Modal(uploadModalEl);
-        }
-        
         if (progressModalEl) {
             progressModalRef.current = new bootstrap.Modal(progressModalEl, {
                 backdrop: 'static',
@@ -268,13 +262,8 @@ const Admin = () => {
         setIsUploading(true);
         setShowUploadProgress(true);
 
-        // Show progress modal first
+        handleModal('uploadModal', 'hide');
         handleModal('uploadProgressModal', 'show');
-
-        // Brief delay before hiding upload modal to ensure smooth transition
-        setTimeout(() => {
-            handleModal('uploadModal', 'hide');
-        }, 150);
 
         try {
             const formDetails = {
@@ -333,13 +322,6 @@ const Admin = () => {
         setModalFile(file);
     };
 
-    // Add this function to handle upload button click
-    const handleUploadClick = () => {
-        if (uploadModalRef.current) {
-            uploadModalRef.current.show();
-        }
-    };
-
     return (
         <>
             {files.length === 0 ? (
@@ -356,7 +338,8 @@ const Admin = () => {
                         <button
                             type="button"
                             className="upload-btn"
-                            onClick={handleUploadClick}
+                            data-bs-toggle="modal"
+                            data-bs-target="#uploadModal"
                         ><i className="fas fa-upload"></i> Upload New Resource
                         </button>
 
