@@ -411,10 +411,12 @@ const Admin = () => {
                                                     alt={modalFile.title}
                                                     className="thumbnail"
                                                 />
-                                                <p id="editTitleDelete" style={{ margin: 0, marginTop: "5px", fontWeight: "bold" }}>
+                                                <p id="editTitleDelete" style={{ margin: 0, marginTop: "5px" }}>
                                                     <strong>{modalFile.title} ({modalFile.year})</strong>
-                                                    <br>by <strong><em>{modalFile.author}</em></strong></br>
+                                                    <br />
+                                                    by <strong><em>{modalFile.author}</em></strong>
                                                 </p>
+
                                                 <p style={{ marginTop: "5px", marginBottom: "10px" }}>
                                                     Are you sure you want to delete this file? This action cannot be undone.
                                                 </p>
