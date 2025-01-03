@@ -7,6 +7,7 @@ const Admin = () => {
     const [fileUploaded, setFileUploaded] = useState(null);
     const [fileError, setFileError] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState('');
     const [modalFile, setModalFile] = useState(null);
     const [files, setFiles] = useState([]);
@@ -82,7 +83,7 @@ const Admin = () => {
                 toastRef.current.dispose();
             }
         };
-    }, []); // Run once on mount
+    }, []);
 
     // Handle progress modal visibility
     useEffect(() => {
@@ -119,8 +120,10 @@ const Admin = () => {
     };
 
     const deleteFile = async (fileId) => {
+        setIsDeleting(true);
+
         try {
-            const response = await fetch('/api/DeleteFile',{
+            const response = await fetch('/api/DeleteFile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileId })
@@ -129,7 +132,16 @@ const Admin = () => {
             const data = await response.json();
 
             if (data.success) {
-            
+                setIsDeleting(false);
+
+                const deleteModal = bootstrap.Modal.getInstance('#deleteModal');
+                deleteModal?.hide();
+
+                document.body.classList.remove('modal-open');
+                document.querySelector('.modal-backdrop')?.remove();
+
+                toastRef.current = new bootstrap.Toast('#deleteToast');
+                toastRef.current?.show();
             } else {
                 console.error('Error deleting file:', data.message);
             }
@@ -385,10 +397,14 @@ const Admin = () => {
                                             Are you sure you want to delete this file? This action cannot be undone.
                                         </p>
                                         <button
+                                            type="submit"
                                             id="confirmDeleteBtn"
                                             className="red-btn"
                                             onClick={() => deleteFile(modalFile.id)}
-                                        >Delete</button>
+                                            disabled={isDeleting}
+                                        >
+                                            {isDeleting ? 'Deleting...' : 'Delet Resource'}
+                                        </button>
                                     </>
                                 )}
                                 <button
