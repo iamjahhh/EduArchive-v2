@@ -399,7 +399,7 @@ const Admin = () => {
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title" id="deleteModalLabel">Delete Resource</h5>
-                                    <button type="button" className="btn-close" onClick={() => closeModalById('deleteModal')}></button>
+                                    <button type="button" disabled={isDeleting} className="btn-close" onClick={() => closeModalById('deleteModal')}></button>
                                 </div>
                                 <div className="modal-body">
                                     <div className="deleteModal-content">
@@ -414,7 +414,7 @@ const Admin = () => {
                                                 <p id="editTitleDelete" style={{ marginTop: "5px", fontWeight: "bold" }}>
                                                     {modalFile.title} ({modalFile.year})
                                                 </p>
-                                                <p>
+                                                <p style={{ margin: 0 }}>
                                                     by <strong>{modalFile.author}</strong>
                                                 </p>
                                                 <p style={{ marginTop: "5px", marginBottom: "10px" }}>
