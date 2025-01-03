@@ -100,37 +100,44 @@ const Admin = () => {
         }
     };
 
-    // Add this utility function near the top of the component
+    // Update the handleModal function
     const handleModal = (modalId, action) => {
         try {
             const modalEl = document.getElementById(modalId);
             if (!modalEl) return null;
 
             let modalInstance = bootstrap.Modal.getInstance(modalEl);
-            
-            // Clean up any existing modal and backdrop first
-            if (modalInstance) {
-                modalInstance.dispose();
+
+            if (action === 'hide') {
+                // If hiding, just hide the current instance if it exists
+                if (modalInstance) {
+                    modalInstance.hide();
+                    // Wait for hide animation
+                    setTimeout(() => {
+                        modalInstance.dispose();
+                        // Clean up any lingering backdrops and classes
+                        const backdrops = document.querySelectorAll('.modal-backdrop');
+                        backdrops.forEach(backdrop => backdrop.remove());
+                        document.body.classList.remove('modal-open');
+                        document.body.style.paddingRight = '';
+                    }, 300);
+                }
+                return null;
             }
 
-            // Remove any lingering backdrops
-            const backdrops = document.querySelectorAll('.modal-backdrop');
-            backdrops.forEach(backdrop => backdrop.remove());
-            
-            // Clean up modal-related classes on body
-            document.body.classList.remove('modal-open');
-            document.body.style.paddingRight = '';
-
             if (action === 'show') {
-                // Create fresh modal instance and show it
+                // If showing, dispose old instance first
+                if (modalInstance) {
+                    modalInstance.dispose();
+                }
+                // Create fresh modal instance with appropriate options
                 modalInstance = new bootstrap.Modal(modalEl, {
                     backdrop: modalId === 'uploadProgressModal' ? 'static' : true,
                     keyboard: modalId === 'uploadProgressModal' ? false : true
                 });
                 modalInstance.show();
-                return modalInstance; // Return the instance
+                return modalInstance;
             }
-            return null;
         } catch (error) {
             console.error('Modal handling error:', error);
             return null;
@@ -631,7 +638,7 @@ const Admin = () => {
                                         </div>
 
                                         {/* Chunk Status */}
-                                        <div className="chunks-list mb-2">
+                                        <div className="chunks-list">
                                             {uploadStats.chunks.map((chunk, index) => (
                                                 <div key={index} className="chunk-item d-flex align-items-center mb-2">
                                                     {/* Status Badge */}
