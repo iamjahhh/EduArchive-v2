@@ -61,35 +61,6 @@ const Admin = () => {
     }, [showUploadProgress, uploadStats.startTime]);
 
     useEffect(() => {
-        // Initialize all modals
-        const modals = {
-            upload: document.getElementById('uploadModal'),
-            delete: document.getElementById('deleteModal'),
-            edit: document.getElementById('editModal'),
-            progress: document.getElementById('uploadProgressModal')
-        };
-
-        // Initialize modals with Bootstrap
-        Object.entries(modals).forEach(([key, element]) => {
-            if (element) {
-                const modalInstance = new bootstrap.Modal(element);
-                switch(key) {
-                    case 'upload':
-                        uploadModalRef.current = modalInstance;
-                        break;
-                    case 'delete':
-                        deleteModalRef.current = modalInstance;
-                        break;
-                    case 'edit':
-                        editModalRef.current = modalInstance;
-                        break;
-                    case 'progress':
-                        progressModalRef.current = modalInstance;
-                        break;
-                }
-            }
-        });
-
         // Initialize toasts
         const toastEl = document.getElementById('uploadToast');
         const deleteToastEl = document.getElementById('deleteToast');
@@ -139,28 +110,6 @@ const Admin = () => {
         }
     };
 
-    // Update the handleModal function to properly handle backdrops
-    const handleModal = (modalRef, action, options = {}) => {
-        if (!modalRef.current) return;
-
-        if (action === 'show') {
-            modalRef.current.show();
-        } else if (action === 'hide') {
-            modalRef.current.hide();
-            // Clean up any stray backdrops
-            const backdropElements = document.getElementsByClassName('modal-backdrop');
-            Array.from(backdropElements).forEach(el => el.remove());
-        }
-    };
-
-    const closeModal = (modalRef) => {
-        if (modalRef.current) {
-            modalRef.current.hide();
-            const backdropElements = document.getElementsByClassName('modal-backdrop');
-            Array.from(backdropElements).forEach(el => el.remove());
-        }
-    };
-
     const deleteFile = async (fileId) => {
         setIsDeleting(true);
 
@@ -175,7 +124,7 @@ const Admin = () => {
 
             if (data.success) {
                 setIsDeleting(false);
-                handleModal(deleteModalRef, 'hide');
+                closeModalById('deleteModal');
 
                 // Fix delete toast showing
                 const toast = new bootstrap.Toast(document.getElementById('deleteToast'));
@@ -296,14 +245,27 @@ const Admin = () => {
         }
     };
 
-    // Update handleSubmit to handle modal transitions better
+    // Replace closeModal function with this helper
+    const closeModalById = (modalId) => {
+        const modalElement = document.getElementById(modalId);
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    };
+
+    // Update handleSubmit to use direct modal manipulation
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsUploading(true);
         setShowUploadProgress(true);
 
-        handleModal(uploadModalRef, 'hide');
-        handleModal(progressModalRef, 'show');
+        // Hide upload modal
+        closeModalById('uploadModal');
+
+        // Show progress modal
+        const progressModal = new bootstrap.Modal(document.getElementById('uploadProgressModal'));
+        progressModal.show();
 
         try {
             const formDetails = {
@@ -321,8 +283,8 @@ const Admin = () => {
             if (fileId) {
                 await fetchFiles();
 
-                // Hide progress modal using handleModal instead of direct reference
-                handleModal(progressModalRef, 'hide');
+                // Hide progress modal
+                closeModalById('uploadProgressModal');
                 setShowUploadProgress(false);
 
                 setUploadResult({
@@ -354,19 +316,27 @@ const Admin = () => {
         setSelectedTopic(e.target.value);
     };
 
+    // Update handleUploadClick to directly create and show the modal
+    const handleUploadClick = () => {
+        const modalElement = document.getElementById('uploadModal');
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    };
+
+    // Update handleEditClick to directly create and show the modal
     const handleEditClick = (file) => {
         setModalFile(file);
-        handleModal(editModalRef, 'show');
+        const modalElement = document.getElementById('editModal');
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
     };
 
+    // Update handleDeleteClick to directly create and show the modal
     const handleDeleteClick = (file) => {
         setModalFile(file);
-        handleModal(deleteModalRef, 'show');
-    };
-
-    // Add handler for upload button click
-    const handleUploadClick = () => {
-        handleModal(uploadModalRef, 'show');
+        const modalElement = document.getElementById('deleteModal');
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
     };
 
     return (
@@ -429,7 +399,7 @@ const Admin = () => {
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title" id="deleteModalLabel">Delete Resource</h5>
-                                    <button type="button" className="btn-close" onClick={() => closeModal(deleteModalRef)}></button>
+                                    <button type="button" className="btn-close" onClick={() => closeModalById('deleteModal')}></button>
                                 </div>
                                 <div className="modal-body">
                                     <div className="deleteModal-content">
@@ -461,7 +431,7 @@ const Admin = () => {
                                         <button
                                             type="button"
                                             className="cancel-btn"
-                                            onClick={() => closeModal(deleteModalRef)}
+                                            onClick={() => closeModalById('deleteModal')}
                                             style={{ marginLeft: '1rem' }}
                                             disabled={isDeleting}
                                         >
@@ -479,7 +449,7 @@ const Admin = () => {
                             <div className="modal-content">
                                 <div className="modal-header">
                                     <h5 className="modal-title" id="uploadModalLabel">Upload Resource</h5>
-                                    <button type="button" className="btn-close" onClick={() => closeModal(uploadModalRef)}></button>
+                                    <button type="button" className="btn-close" onClick={() => closeModalById('uploadModal')}></button>
                                 </div>
                                 <div className="modal-body">
                                     <form id="uploadForm" className="form-container" onSubmit={handleSubmit}>
@@ -545,7 +515,7 @@ const Admin = () => {
                                         <button
                                             type="button"
                                             className="red-btn"
-                                            onClick={() => closeModal(uploadModalRef)}
+                                            onClick={() => closeModalById('uploadModal')}
                                             disabled={isUploading}
                                             style={{ marginLeft: '1rem' }}
                                         >
