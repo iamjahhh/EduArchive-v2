@@ -125,23 +125,27 @@ const Admin = () => {
             const data = await response.json();
 
             if (data.success) {
-                await fetchFiles();
                 setIsDeleting(false);
-
-                const deleteModal = bootstrap.Modal.getInstance('#deleteModal');
-                deleteModal?.hide();
-
-                document.body.classList.remove('modal-open');
-                document.querySelector('.modal-backdrop')?.remove();
+                closeModal("deleteModal");
 
                 toastRef.current = new bootstrap.Toast('#deleteToast');
                 toastRef.current?.show();
+
+                await fetchFiles();
             } else {
                 console.error('Error deleting file:', data.message);
             }
         } catch (error) {
             console.error('Error deleting file:', error);
         }
+    }
+
+    const closeModal = (modalId) => {
+        const modal = bootstrap.Modal.getInstance(`#${modalId}`);
+        modal?.hide();
+
+        document.body.classList.remove('modal-open');
+        document.querySelector('.modal-backdrop')?.remove();
     }
 
     const handleFileChange = (event) => {
@@ -251,11 +255,7 @@ const Admin = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const uploadModal = bootstrap.Modal.getInstance('#uploadModal');
-        uploadModal?.hide();
-
-        document.body.classList.remove('modal-open');
-        document.querySelector('.modal-backdrop')?.remove();
+        closeModal("uploadModal");
 
         setIsUploading(true);
         setShowUploadProgress(true);
@@ -284,6 +284,8 @@ const Admin = () => {
                     uploadTime: elapsedTime,
                     chunks: uploadStats.chunks.length
                 });
+
+                closeModal("uploadProgressModal");
                 
                 toastRef.current = new bootstrap.Toast('#uploadToast');
                 toastRef.current?.show();
