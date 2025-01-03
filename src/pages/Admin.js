@@ -596,16 +596,7 @@ const Admin = () => {
                         <div className="toast-body">
                             <div className="d-flex align-items-center">
                                 <i className="fas fa-check-circle me-2"></i>
-                                <div>
-                                    <div className="fw-bold">Upload Successful!</div>
-                                    {uploadResult && (
-                                        <small>
-                                            {uploadResult.fileName} ({(uploadResult.fileSize / 1024 / 1024).toFixed(1)} MB)
-                                            <br />
-                                            Upload time: {(uploadResult.uploadTime / 1000).toFixed(1)}s
-                                        </small>
-                                    )}
-                                </div>
+                                <div className="fw-bold">Upload Successful!</div>
                             </div>
                         </div>
                         <button type="button" className="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
