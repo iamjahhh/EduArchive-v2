@@ -58,7 +58,6 @@ const Admin = () => {
     }, [showUploadProgress, uploadStats.startTime]);
 
     useEffect(() => {
-        // Initialize modals when component mounts
         const progressModalEl = document.getElementById('uploadProgressModal');
         const toastEl = document.getElementById('uploadToast');
         const deleteToastEl = document.getElementById('deleteToast');
@@ -204,6 +203,7 @@ const Admin = () => {
             chunks: Array(totalChunks).fill({ status: 'pending', speed: 0, time: 0 }),
             error: null
         });
+        
         setShowUploadProgress(true);
 
         try {
@@ -285,10 +285,14 @@ const Admin = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        closeModal('uploadModal');
-
         setIsUploading(true);
         setShowUploadProgress(true);
+
+        // Show progress modal first
+        progressModalRef.current?.show();
+        
+        // Then close upload modal
+        closeModal('uploadModal');
 
         try {
             const formDetails = {
