@@ -63,7 +63,10 @@ const Admin = () => {
         const deleteToastEl = document.getElementById('deleteToast');
         
         if (progressModalEl) {
-            progressModalRef.current = new bootstrap.Modal(progressModalEl);
+            progressModalRef.current = new bootstrap.Modal(progressModalEl, {
+                backdrop: 'static',
+                keyboard: false
+            });
         }
 
         if (toastEl) {
@@ -102,55 +105,15 @@ const Admin = () => {
 
     // Update the handleModal function to properly handle backdrops
     const handleModal = (modalId, action, options = {}) => {
-        try {
-            const modalEl = document.getElementById(modalId);
-            if (!modalEl) return null;
-    
-            // Retrieve existing modal instance
-            let modalInstance = bootstrap.Modal.getInstance(modalEl);
-    
-            // Default options
-            const {
-                backdrop = true, // true, 'static', or false
-                keyboard = true // Allow keyboard interaction
-            } = options;
-    
-            if (action === 'hide') {
-                // Hide the modal if an instance exists
-                if (modalInstance) {
-                    modalInstance.hide();
-                    modalInstance.dispose();
-                }
-    
-                // Ensure the backdrop is removed from the DOM
-                const backdropEl = document.querySelector('.modal-backdrop');
-                if (backdropEl) {
-                    backdropEl.remove();
-                }
-    
-                return null;
-            }
-    
-            if (action === 'show') {
-                // Dispose of existing instance if any
-                if (modalInstance) {
-                    modalInstance.hide();
-                    modalInstance.dispose();
-                }
-    
-                // Create a new modal instance with options
-                modalInstance = new bootstrap.Modal(modalEl, {
-                    backdrop: backdrop,
-                    keyboard: keyboard
-                });
-    
-                // Show the modal
-                modalInstance.show();
-                return modalInstance;
-            }
-        } catch (error) {
-            console.error('Modal handling error:', error);
-            return null;
+        const modalEl = document.getElementById(modalId);
+        if (!modalEl) return;
+
+        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl, options);
+
+        if (action === 'show') {
+            modalInstance.show();
+        } else if (action === 'hide') {
+            modalInstance.hide();
         }
     };
 
@@ -172,7 +135,7 @@ const Admin = () => {
 
             if (data.success) {
                 setIsDeleting(false);
-                closeModal('deleteModal');
+                handleModal('deleteModal', 'hide');
 
                 // Fix delete toast showing
                 const toast = new bootstrap.Toast(document.getElementById('deleteToast'));
@@ -305,7 +268,7 @@ const Admin = () => {
         setShowUploadProgress(true);
 
         // Show progress modal first
-        const progressModal = handleModal('uploadProgressModal', 'show');
+        handleModal('uploadProgressModal', 'show');
         
         // Brief delay before hiding upload modal to ensure smooth transition
         setTimeout(() => {
