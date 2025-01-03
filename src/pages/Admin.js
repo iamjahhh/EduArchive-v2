@@ -61,40 +61,18 @@ const Admin = () => {
         const progressModalEl = document.getElementById('uploadProgressModal');
         const toastEl = document.getElementById('uploadToast');
         const deleteToastEl = document.getElementById('deleteToast');
-
+        
         if (progressModalEl) {
-            progressModalRef.current = new bootstrap.Modal(progressModalEl, {
-                backdrop: 'static',
-                keyboard: false
-            });
+            progressModalRef.current = new bootstrap.Modal(progressModalEl);
         }
 
         if (toastEl) {
-            toastRef.current = new bootstrap.Toast(toastEl, {
-                delay: 3000,
-                animation: true
-            });
+            toastRef.current = new bootstrap.Toast(toastEl);
         }
 
         if (deleteToastEl) {
-            deleteToastRef.current = new bootstrap.Toast(deleteToastEl, {
-                delay: 3000,
-                animation: true
-            });
+            deleteToastRef.current = new bootstrap.Toast(deleteToastEl);
         }
-
-        return () => {
-            // Cleanup on unmount
-            if (progressModalRef.current) {
-                progressModalRef.current.dispose();
-            }
-            if (toastRef.current) {
-                toastRef.current.dispose();
-            }
-            if (deleteToastRef.current) {
-                deleteToastRef.current.dispose();
-            }
-        };
     }, []);
 
     useEffect(() => {
@@ -142,7 +120,7 @@ const Admin = () => {
             
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) backdrop.remove();
-            
+
             document.body.classList.remove('modal-open');
             document.body.style.paddingRight = '';
         } catch (error) {
@@ -166,7 +144,9 @@ const Admin = () => {
                 setIsDeleting(false);
                 closeModal('deleteModal');
 
-                deleteToastRef.current?.show();
+                // Fix delete toast showing
+                const toast = new bootstrap.Toast(document.getElementById('deleteToast'));
+                toast.show();
 
                 await fetchFiles();
             } else {
@@ -289,8 +269,11 @@ const Admin = () => {
         setIsUploading(true);
         setShowUploadProgress(true);
 
-        closeModal('uploadModal');
+        // First show progress modal
         progressModalRef.current?.show();
+        
+        // Then close upload modal
+        closeModal('uploadModal');
 
         try {
             const formDetails = {
@@ -316,8 +299,10 @@ const Admin = () => {
                     chunks: uploadStats.chunks.length
                 });
 
-                toastRef.current = new bootstrap.Toast('#uploadToast');
-                toastRef.current?.show();
+                // Fix toast showing
+                const toast = new bootstrap.Toast(document.getElementById('uploadToast'));
+                toast.show();
+                
                 resetForm();
             }
         } catch (error) {
