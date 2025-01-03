@@ -573,10 +573,11 @@ const Admin = () => {
             <div className="modal fade" id="successModal" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content border-0 shadow-lg">
-                        <div className="modal-header">
-                            <div className="success-icon text-center mb-2">
+                        <div className="modal-header text-center">
+                            <div className="success-icon mb-2">
                                 <i className="fas fa-check-circle text-success" style={{ fontSize: '5rem' }}></i>
-                                <h4 className="mb-3 fw-bold">Upload Successful!</h4>
+                                <h4 className="mb-1 fw-bold">Upload Successful!</h4>
+                                <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                         </div>
 
@@ -586,7 +587,7 @@ const Admin = () => {
                                 <div className="upload-details text-start mb-4">
                                     <p style={{ margin: 0 }}><strong>Title:</strong> {uploadResult.title}</p>
                                     <p style={{ margin: 0 }}><strong>File:</strong> {uploadResult.fileName}</p>
-                                    <p style={{ marginTop: "10px" }}><strong>Size:</strong> {(uploadResult.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                                    <p style={{ margin: 0, marginTop: "10px" }}><strong>Size:</strong> {(uploadResult.fileSize / 1024 / 1024).toFixed(2)} MB</p>
                                     <p style={{ margin: 0 }}><strong>Upload Time:</strong> {(uploadResult.uploadTime / 1000).toFixed(1)}s</p>
                                 </div>
                             )}
