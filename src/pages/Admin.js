@@ -100,24 +100,46 @@ const Admin = () => {
         }
     };
 
-    const closeModal = (modalId) => {
+    // Add this utility function near the top of the component
+    const handleModal = (modalId, action) => {
         try {
             const modalEl = document.getElementById(modalId);
-            if (modalEl) {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            }
-            
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) backdrop.remove();
+            if (!modalEl) return null;
 
+            let modalInstance = bootstrap.Modal.getInstance(modalEl);
+            
+            // Clean up any existing modal and backdrop first
+            if (modalInstance) {
+                modalInstance.dispose();
+            }
+
+            // Remove any lingering backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            
+            // Clean up modal-related classes on body
             document.body.classList.remove('modal-open');
             document.body.style.paddingRight = '';
+
+            if (action === 'show') {
+                // Create fresh modal instance and show it
+                modalInstance = new bootstrap.Modal(modalEl, {
+                    backdrop: modalId === 'uploadProgressModal' ? 'static' : true,
+                    keyboard: modalId === 'uploadProgressModal' ? false : true
+                });
+                modalInstance.show();
+                return modalInstance; // Return the instance
+            }
+            return null;
         } catch (error) {
-            console.error('Modal close error:', error);
+            console.error('Modal handling error:', error);
+            return null;
         }
+    };
+
+    // Replace closeModal function with this:
+    const closeModal = (modalId) => {
+        handleModal(modalId, 'hide');
     };
 
     const deleteFile = async (fileId) => {
@@ -255,30 +277,21 @@ const Admin = () => {
         }
     };
 
+    // Update showUploadProgressModal function:
     const showUploadProgressModal = () => {
-        const modalEl = document.getElementById('uploadProgressModal');
-        if (modalEl) {
-            const modal = new bootstrap.Modal(modalEl, {
-                backdrop: 'static',
-                keyboard: false
-            });
-            modal.show();
-            return modal;
-        }
-        return null;
+        handleModal('uploadProgressModal', 'show');
     };
 
+    // Update handleSubmit:
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         setIsUploading(true);
         setShowUploadProgress(true);
 
-        // Initialize and show progress modal first
-        const progressModal = showUploadProgressModal();
-        
-        // Then close upload modal
-        closeModal('uploadModal');
+        // Close upload modal first
+        handleModal('uploadModal', 'hide');
+        // Then show progress modal and store the instance
+        const progressModal = handleModal('uploadProgressModal', 'show');
 
         try {
             const formDetails = {
@@ -296,8 +309,8 @@ const Admin = () => {
             if (fileId) {
                 await fetchFiles();
                 
-                // Hide progress modal
-                progressModal?.hide();
+                // Hide progress modal using handleModal instead of direct reference
+                handleModal('uploadProgressModal', 'hide');
                 setShowUploadProgress(false);
                 
                 setUploadResult({
