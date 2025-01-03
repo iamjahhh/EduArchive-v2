@@ -24,7 +24,6 @@ const Admin = () => {
     const timerRef = useRef(null);
     const toastRef = useRef(null);
 
-    // Add refs for modals
     const progressModalRef = useRef(null);
     const successModalRef = useRef(null);
 
@@ -57,25 +56,20 @@ const Admin = () => {
     }, [showUploadProgress, uploadStats.startTime]);
 
     useEffect(() => {
-        // Initialize modals when component mounts
         const progressModal = new bootstrap.Modal('#uploadProgressModal', {
             backdrop: 'static',
             keyboard: false
         });
 
-        // Store modal instance in ref
         progressModalRef.current = progressModal;
 
-        // Initialize toast
         toastRef.current = new bootstrap.Toast('#uploadToast');
 
-        // Show/hide progress modal based on state
         if (showUploadProgress) {
             progressModal.show();
         }
 
         return () => {
-            // Cleanup on unmount
             if (progressModalRef.current) {
                 progressModalRef.current.dispose();
             }
@@ -85,7 +79,6 @@ const Admin = () => {
         };
     }, []);
 
-    // Handle progress modal visibility
     useEffect(() => {
         if (showUploadProgress) {
             progressModalRef.current?.show();
@@ -258,11 +251,9 @@ const Admin = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Close upload form modal
         const uploadModal = bootstrap.Modal.getInstance('#uploadModal');
         uploadModal?.hide();
 
-        // Reset modal state
         document.body.classList.remove('modal-open');
         document.querySelector('.modal-backdrop')?.remove();
 
@@ -284,6 +275,7 @@ const Admin = () => {
 
             if (fileId) {
                 await fetchFiles();
+
                 setShowUploadProgress(false);
                 setUploadResult({
                     title: formDetails.title,
@@ -292,8 +284,10 @@ const Admin = () => {
                     uploadTime: elapsedTime,
                     chunks: uploadStats.chunks.length
                 });
-                // Show toast instead of modal
+                
+                toastRef.current = new bootstrap.Toast('#uploadToast');
                 toastRef.current?.show();
+
                 resetForm();
             }
         } catch (error) {
