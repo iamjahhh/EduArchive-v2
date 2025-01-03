@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import "./Admin.css"
 import { v4 as uuidv4 } from 'uuid';
 import bootstrap from 'bootstrap/dist/js/bootstrap.bundle';
+import DeleteModal from '../modals/DeleteModal';
 
 const Admin = () => {
     const [fileUploaded, setFileUploaded] = useState(null);
@@ -110,14 +111,14 @@ const Admin = () => {
         }
     };
 
-    const deleteFile = async (fileId) => {
+    const deleteFile = async () => {
         setIsDeleting(true);
 
         try {
             const response = await fetch('/api/DeleteFile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileId })
+                body: JSON.stringify({ fileId: modalFile.id })
             });
 
             const data = await response.json();
@@ -393,56 +394,13 @@ const Admin = () => {
                         </div>
                     </div>
 
-                    {/*Delete Modal*/}
-                    <div className="modal fade" id="deleteModal" tabIndex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-                        <div className="modal-dialog modal-dialog-centered">
-                            <div className="modal-content">
-                                <div className="modal-header">
-                                    <h5 className="modal-title" id="deleteModalLabel">Delete Resource</h5>
-                                    <button type="button" disabled={isDeleting} className="btn-close" onClick={() => closeModalById('deleteModal')}></button>
-                                </div>
-                                <div className="modal-body">
-                                    <div className="deleteModal-content">
-                                        {modalFile && (
-                                            <>
-                                                <img
-                                                    id="editThumbnailDelete"
-                                                    src={modalFile.thumbnailUrl}
-                                                    alt={modalFile.title}
-                                                    className="thumbnail"
-                                                />
-
-                                                <p id="editTitleDelete" style={{ margin: 0, marginTop: "5px" }}>
-                                                    <strong>{modalFile.title} ({modalFile.year})</strong>
-                                                    <br />
-                                                    by <em style={{ fontWeight: "600" }}>{modalFile.author}</em>
-                                                </p>
-
-                                                <p style={{ marginTop: "5px", marginBottom: "10px" }}>
-                                                    Are you sure you want to delete this file? This action cannot be undone.
-                                                </p>
-                                                <button
-                                                    id="confirmDeleteBtn"
-                                                    className="red-btn"
-                                                    disabled={isDeleting}
-                                                    onClick={() => deleteFile(modalFile.id)}
-                                                >{isDeleting ? 'Deleting...' : 'Delete Resource'}</button>
-                                            </>
-                                        )}
-                                        <button
-                                            type="button"
-                                            className="cancel-btn"
-                                            onClick={() => closeModalById('deleteModal')}
-                                            style={{ marginLeft: '1rem' }}
-                                            disabled={isDeleting}
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {/* Replace the inline delete modal with the component */}
+                    <DeleteModal 
+                        isDeleting={isDeleting}
+                        modalFile={modalFile}
+                        onDelete={deleteFile}
+                        onClose={() => closeModalById('deleteModal')}
+                    />
 
                     {/*Upload Modal*/}
                     <div className="modal fade" id="uploadModal" tabIndex="-1" aria-hidden="true">
