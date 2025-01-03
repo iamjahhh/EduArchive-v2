@@ -449,6 +449,7 @@ const Admin = () => {
                                             className="cancel-btn"
                                             data-bs-dismiss="modal"
                                             style={{ marginLeft: '1rem' }}
+                                            disabled={isDeleting}
                                             onClick={resetForm}
                                         >
                                             Cancel
@@ -532,6 +533,7 @@ const Admin = () => {
                                             type="button"
                                             className="red-btn"
                                             data-bs-dismiss="modal"
+                                            disabled={isUploading}
                                             style={{ marginLeft: '1rem' }}
                                             onClick={resetForm}
                                         >
@@ -629,7 +631,7 @@ const Admin = () => {
                                         </div>
 
                                         {/* Chunk Status */}
-                                        <div className="chunks-list">
+                                        <div className="chunks-list mb-2">
                                             {uploadStats.chunks.map((chunk, index) => (
                                                 <div key={index} className="chunk-item d-flex align-items-center mb-2">
                                                     {/* Status Badge */}
