@@ -23,7 +23,6 @@ const Admin = () => {
     const [uploadResult, setUploadResult] = useState(null);
     const timerRef = useRef(null);
     const toastRef = useRef(null);
-    const deleteToastRef = useRef(null); // Declare deleteToastRef
 
     // Add refs for modals
     const progressModalRef = useRef(null);
@@ -59,29 +58,17 @@ const Admin = () => {
 
     useEffect(() => {
         // Initialize modals when component mounts
-        const progressModalEl = document.getElementById('uploadProgressModal');
-        const toastEl = document.getElementById('uploadToast');
-        const deleteToastEl = document.getElementById('deleteToast');
+        const progressModal = new bootstrap.Modal('#uploadProgressModal', {
+            backdrop: 'static',
+            keyboard: false
+        });
 
-        if (progressModalEl) {
-            progressModalRef.current = new bootstrap.Modal(progressModalEl, {
-                backdrop: 'static',
-                keyboard: false
-            });
-        }
+        // Store modal instance in ref
+        progressModalRef.current = progressModal;
 
-        if (toastEl) {
-            toastRef.current = new bootstrap.Toast(toastEl, {
-                delay: 3000,
-                animation: true
-            });
-        }
-
-        if (deleteToastEl) {
-            deleteToastRef.current = new bootstrap.Toast(deleteToastEl, {
-                delay: 3000,
-                animation: true
-            });
+        // Show/hide progress modal based on state
+        if (showUploadProgress) {
+            progressModal.show();
         }
 
         return () => {
@@ -92,16 +79,14 @@ const Admin = () => {
             if (toastRef.current) {
                 toastRef.current.dispose();
             }
-            if (deleteToastRef.current) {
-                deleteToastRef.current.dispose();
-            }
         };
-    }, []);
+    }, []); // Run once on mount
 
     useEffect(() => {
         if (showUploadProgress) {
             progressModalRef.current?.show();
         } else {
+            closeModal('uploadProgressModal');
             progressModalRef.current?.hide();
         }
     }, [showUploadProgress]);
@@ -132,23 +117,12 @@ const Admin = () => {
     };
 
     const closeModal = (modalId) => {
-        try {
-            const modalEl = document.getElementById(modalId);
-            if (modalEl) {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            }
-            // Clean up modal backdrop and body classes
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) backdrop.remove();
-            document.body.classList.remove('modal-open');
-            document.body.style.paddingRight = '';
-        } catch (error) {
-            console.error('Modal close error:', error);
-        }
-    };
+        const uploadModal = bootstrap.Modal.getInstance(`#${modalId}`);
+        uploadModal?.hide();
+
+        document.body.classList.remove('modal-open');
+        document.querySelector('.modal-backdrop')?.remove();
+    }
 
     const deleteFile = async (fileId) => {
         setIsDeleting(true);
@@ -166,7 +140,8 @@ const Admin = () => {
                 setIsDeleting(false);
                 closeModal('deleteModal');
 
-                deleteToastRef.current?.show();
+                toastRef.current = new bootstrap.Toast('#deleteToast');
+                toastRef.current?.show();
 
                 await fetchFiles();
             } else {
@@ -344,8 +319,8 @@ const Admin = () => {
     return (
         <>
             {files.length === 0 ? (
-                <div className="d-flex justify-content-center align-items-center vh-100">
-                    <div className="spinner-border" style={{ width: "3rem", height: "3rem" }} role="status">
+                <div style={{ marginTop: "150px" }} className="d-flex justify-content-center">
+                    <div className="spinner-grow text-dark" role="status">
                         <span className="sr-only">Loading...</span>
                     </div>
                 </div>
