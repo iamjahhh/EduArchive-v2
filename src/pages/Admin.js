@@ -139,9 +139,10 @@ const Admin = () => {
                     modalInstance.hide();
                 }
             }
-            // Clean up modal backdrop and body classes
+            
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) backdrop.remove();
+            
             document.body.classList.remove('modal-open');
             document.body.style.paddingRight = '';
         } catch (error) {
@@ -288,11 +289,8 @@ const Admin = () => {
         setIsUploading(true);
         setShowUploadProgress(true);
 
-        // Show progress modal first
-        progressModalRef.current?.show();
-        
-        // Then close upload modal
         closeModal('uploadModal');
+        progressModalRef.current?.show();
 
         try {
             const formDetails = {
