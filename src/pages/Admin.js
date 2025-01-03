@@ -105,13 +105,14 @@ const Admin = () => {
 
     // Update the handleModal function to properly handle backdrops
     const handleModal = (modalId, action, options = {}) => {
-        if (modalId == "uploadModal")
-            return;
-        
         const modalEl = document.getElementById(modalId);
         if (!modalEl) return;
 
-        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl, options);
+        let modalInstance = bootstrap.Modal.getInstance(modalEl);
+
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(modalEl, options);
+        }
 
         if (action === 'show') {
             modalInstance.show();
