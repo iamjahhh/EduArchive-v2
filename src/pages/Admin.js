@@ -118,6 +118,9 @@ const Admin = () => {
             modalInstance.show();
         } else if (action === 'hide') {
             modalInstance.hide();
+            
+            const backdropEls = document.querySelectorAll('.modal-backdrop.fade.show');
+            if (backdropEls) backdropEls.forEach(backdropEl => backdropEl.remove());
         }
     };
 
