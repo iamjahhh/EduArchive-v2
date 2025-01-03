@@ -86,6 +86,7 @@ const Admin = () => {
         if (showUploadProgress) {
             progressModalRef.current?.show();
         } else {
+            closeModal('uploadProgressModal');
             progressModalRef.current?.hide();
         }
     }, [showUploadProgress]);
