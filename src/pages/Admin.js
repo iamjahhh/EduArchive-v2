@@ -61,32 +61,42 @@ const Admin = () => {
     }, [showUploadProgress, uploadStats.startTime]);
 
     useEffect(() => {
-        const uploadModalEl = document.getElementById('uploadModal');
-        const deleteModalEl = document.getElementById('deleteModal');
-        const editModalEl = document.getElementById('editModal');
-        const progressModalEl = document.getElementById('uploadProgressModal');
+        // Initialize all modals
+        const modals = {
+            upload: document.getElementById('uploadModal'),
+            delete: document.getElementById('deleteModal'),
+            edit: document.getElementById('editModal'),
+            progress: document.getElementById('uploadProgressModal')
+        };
+
+        // Initialize modals with Bootstrap
+        Object.entries(modals).forEach(([key, element]) => {
+            if (element) {
+                const modalInstance = new bootstrap.Modal(element);
+                switch(key) {
+                    case 'upload':
+                        uploadModalRef.current = modalInstance;
+                        break;
+                    case 'delete':
+                        deleteModalRef.current = modalInstance;
+                        break;
+                    case 'edit':
+                        editModalRef.current = modalInstance;
+                        break;
+                    case 'progress':
+                        progressModalRef.current = modalInstance;
+                        break;
+                }
+            }
+        });
+
+        // Initialize toasts
         const toastEl = document.getElementById('uploadToast');
         const deleteToastEl = document.getElementById('deleteToast');
 
-        if (uploadModalEl) {
-            uploadModalRef.current = new bootstrap.Modal(uploadModalEl);
-        }
-        if (deleteModalEl) {
-            deleteModalRef.current = new bootstrap.Modal(deleteModalEl);
-        }
-        if (editModalEl) {
-            editModalRef.current = new bootstrap.Modal(editModalEl);
-        }
-        if (progressModalEl) {
-            progressModalRef.current = new bootstrap.Modal(progressModalEl, {
-                backdrop: 'static',
-                keyboard: false
-            });
-        }
         if (toastEl) {
             toastRef.current = new bootstrap.Toast(toastEl);
         }
-
         if (deleteToastEl) {
             deleteToastRef.current = new bootstrap.Toast(deleteToastEl);
         }
@@ -98,10 +108,11 @@ const Admin = () => {
                     ref.current.dispose();
                 }
             });
+            document.body.classList.remove('modal-open');
             const backdropElements = document.getElementsByClassName('modal-backdrop');
             Array.from(backdropElements).forEach(el => el.remove());
         };
-    }, []);
+    }, []); // Empty dependency array means this runs once on mount
 
     useEffect(() => {
         if (successModalRef.current) {
@@ -345,23 +356,17 @@ const Admin = () => {
 
     const handleEditClick = (file) => {
         setModalFile(file);
-        if (editModalRef.current) {
-            editModalRef.current.show();
-        }
+        handleModal(editModalRef, 'show');
     };
 
     const handleDeleteClick = (file) => {
         setModalFile(file);
-        if (deleteModalRef.current) {
-            deleteModalRef.current.show();
-        }
+        handleModal(deleteModalRef, 'show');
     };
 
     // Add handler for upload button click
     const handleUploadClick = () => {
-        if (uploadModalRef.current) {
-            uploadModalRef.current.show();
-        }
+        handleModal(uploadModalRef, 'show');
     };
 
     return (
