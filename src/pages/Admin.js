@@ -105,6 +105,9 @@ const Admin = () => {
 
     // Update the handleModal function to properly handle backdrops
     const handleModal = (modalId, action, options = {}) => {
+        if (modalId == "uploadModal")
+            return;
+        
         const modalEl = document.getElementById(modalId);
         if (!modalEl) return;
 
@@ -115,10 +118,6 @@ const Admin = () => {
         } else if (action === 'hide') {
             modalInstance.hide();
         }
-    };
-
-    const closeModal = (modalId) => {
-        handleModal(modalId, 'hide');
     };
 
     const deleteFile = async (fileId) => {
@@ -254,11 +253,6 @@ const Admin = () => {
             }));
             throw error;
         }
-    };
-
-    // Update showUploadProgressModal function:
-    const showUploadProgressModal = () => {
-        handleModal('uploadProgressModal', 'show');
     };
 
     // Update handleSubmit to handle modal transitions better
@@ -443,7 +437,7 @@ const Admin = () => {
                     </div>
 
                     {/*Upload Modal*/}
-                    <div className="modal fade" id="uploadModal" tabIndex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+                    <div className="modal fade" id="uploadModal" tabIndex="-1" aria-hidden="true">
                         <div className="modal-dialog">
                             <div className="modal-content">
                                 <div className="modal-header">
