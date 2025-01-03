@@ -6,8 +6,8 @@ import bootstrap from 'bootstrap/dist/js/bootstrap.bundle';
 const Admin = () => {
     const [fileUploaded, setFileUploaded] = useState(null);
     const [fileError, setFileError] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState('');
     const [modalFile, setModalFile] = useState(null);
     const [files, setFiles] = useState([]);
@@ -24,6 +24,7 @@ const Admin = () => {
     const timerRef = useRef(null);
     const toastRef = useRef(null);
 
+    // Add refs for modals
     const progressModalRef = useRef(null);
     const successModalRef = useRef(null);
 
@@ -56,20 +57,22 @@ const Admin = () => {
     }, [showUploadProgress, uploadStats.startTime]);
 
     useEffect(() => {
+        // Initialize modals when component mounts
         const progressModal = new bootstrap.Modal('#uploadProgressModal', {
             backdrop: 'static',
             keyboard: false
         });
 
+        // Store modal instance in ref
         progressModalRef.current = progressModal;
 
-        toastRef.current = new bootstrap.Toast('#uploadToast');
-
+        // Show/hide progress modal based on state
         if (showUploadProgress) {
             progressModal.show();
         }
 
         return () => {
+            // Cleanup on unmount
             if (progressModalRef.current) {
                 progressModalRef.current.dispose();
             }
@@ -77,7 +80,7 @@ const Admin = () => {
                 toastRef.current.dispose();
             }
         };
-    }, []);
+    }, []); // Run once on mount
 
     useEffect(() => {
         if (showUploadProgress) {
@@ -112,6 +115,14 @@ const Admin = () => {
         }
     };
 
+    const closeModal = (modalId) => {
+        const uploadModal = bootstrap.Modal.getInstance(`#${modalId}`);
+        uploadModal?.hide();
+
+        document.body.classList.remove('modal-open');
+        document.querySelector('.modal-backdrop')?.remove();
+    }
+
     const deleteFile = async (fileId) => {
         setIsDeleting(true);
 
@@ -126,27 +137,20 @@ const Admin = () => {
 
             if (data.success) {
                 setIsDeleting(false);
-                closeModal("deleteModal");
+                closeModal('deleteModal');
 
                 toastRef.current = new bootstrap.Toast('#deleteToast');
                 toastRef.current?.show();
 
                 await fetchFiles();
             } else {
-                console.error('Error deleting file:', data.message);
+                throw new Error(data.message);
             }
         } catch (error) {
             console.error('Error deleting file:', error);
+            alert('Error deleting file: ' + error.message);
         }
-    }
-
-    const closeModal = (modalId) => {
-        const modal = bootstrap.Modal.getInstance(`#${modalId}`);
-        modal?.hide();
-
-        document.body.classList.remove('modal-open');
-        document.querySelector('.modal-backdrop')?.remove();
-    }
+    };
 
     const handleFileChange = (event) => {
         const file = event.target.files[0];
@@ -255,7 +259,7 @@ const Admin = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        closeModal("uploadModal");
+        closeModal('uploadModal');
 
         setIsUploading(true);
         setShowUploadProgress(true);
@@ -275,7 +279,6 @@ const Admin = () => {
 
             if (fileId) {
                 await fetchFiles();
-
                 setShowUploadProgress(false);
                 setUploadResult({
                     title: formDetails.title,
@@ -285,11 +288,8 @@ const Admin = () => {
                     chunks: uploadStats.chunks.length
                 });
 
-                closeModal("uploadProgressModal");
-                
                 toastRef.current = new bootstrap.Toast('#uploadToast');
                 toastRef.current?.show();
-
                 resetForm();
             }
         } catch (error) {
@@ -394,14 +394,11 @@ const Admin = () => {
                                             Are you sure you want to delete this file? This action cannot be undone.
                                         </p>
                                         <button
-                                            type="submit"
                                             id="confirmDeleteBtn"
                                             className="red-btn"
-                                            onClick={() => deleteFile(modalFile.id)}
                                             disabled={isDeleting}
-                                        >
-                                            {isDeleting ? 'Deleting...' : 'Delet Resource'}
-                                        </button>
+                                            onClick={() => deleteFile(modalFile.id)}
+                                        >{isDeleting ? 'Deleting...' : 'Delete Resource'}</button>
                                     </>
                                 )}
                                 <button
