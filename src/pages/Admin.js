@@ -101,33 +101,50 @@ const Admin = () => {
     };
 
     // Update the handleModal function to properly handle backdrops
-    const handleModal = (modalId, action) => {
+    const handleModal = (modalId, action, options = {}) => {
         try {
             const modalEl = document.getElementById(modalId);
             if (!modalEl) return null;
-
+    
+            // Retrieve existing modal instance
             let modalInstance = bootstrap.Modal.getInstance(modalEl);
-
+    
+            // Default options
+            const {
+                backdrop = true, // true, 'static', or false
+                keyboard = true // Allow keyboard interaction
+            } = options;
+    
             if (action === 'hide') {
-                if (modalInstance) {
-                    modalInstance.hide();
-                    // Don't dispose or cleanup here - let Bootstrap handle it
-                }
-                return null;
-            }
-
-            if (action === 'show') {
-                // If there's an existing instance, hide it properly first
+                // Hide the modal if an instance exists
                 if (modalInstance) {
                     modalInstance.hide();
                     modalInstance.dispose();
                 }
-
-                // Create new modal instance with proper options
+    
+                // Ensure the backdrop is removed from the DOM
+                const backdropEl = document.querySelector('.modal-backdrop');
+                if (backdropEl) {
+                    backdropEl.remove();
+                }
+    
+                return null;
+            }
+    
+            if (action === 'show') {
+                // Dispose of existing instance if any
+                if (modalInstance) {
+                    modalInstance.hide();
+                    modalInstance.dispose();
+                }
+    
+                // Create a new modal instance with options
                 modalInstance = new bootstrap.Modal(modalEl, {
-                    backdrop: modalId === 'uploadProgressModal' ? 'static' : true,
-                    keyboard: modalId === 'uploadProgressModal' ? false : true
+                    backdrop: backdrop,
+                    keyboard: keyboard
                 });
+    
+                // Show the modal
                 modalInstance.show();
                 return modalInstance;
             }
@@ -137,7 +154,6 @@ const Admin = () => {
         }
     };
 
-    // Replace closeModal function with this:
     const closeModal = (modalId) => {
         handleModal(modalId, 'hide');
     };
