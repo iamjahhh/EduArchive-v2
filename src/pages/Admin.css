@@ -334,9 +334,21 @@ button:disabled {
     padding: 15px;
     background: #f8f9fa;
     border-radius: 5px;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+}
+
+.upload-stats .row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.upload-stats .col-12 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.stat-card {
+    text-align: center;
 }
 
 .chunks-list {
